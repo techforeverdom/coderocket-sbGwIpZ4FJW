@@ -17,6 +17,12 @@ export function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!email || !password) {
+      alert('Please fill in all fields')
+      return
+    }
+
     setLoading(true)
     
     try {
@@ -84,15 +90,15 @@ export function LoginPage() {
                 type="checkbox"
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+              <Label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                 Remember me
-              </label>
+              </Label>
             </div>
 
             <div className="text-sm">
-              <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link to="#" className="font-medium text-blue-600 hover:text-blue-500">
                 Forgot your password?
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -127,7 +133,7 @@ export function LoginPage() {
             <div>Admin: admin@believefundraising.com</div>
             <div>Coach: coach.johnson@lincolnhigh.edu</div>
             <div>Student: alex.thompson@student.lincolnhigh.edu</div>
-            <div>Password: any password works</div>
+            <div>Password: password123 (for all accounts)</div>
           </div>
         </div>
       </Card>

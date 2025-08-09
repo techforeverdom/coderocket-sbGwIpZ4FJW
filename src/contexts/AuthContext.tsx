@@ -32,6 +32,7 @@ interface LoginData {
 
 interface AuthContextType {
   user: User | null
+  loading: boolean
   login: (data: LoginData) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => void
@@ -39,6 +40,8 @@ interface AuthContextType {
   getAllUsers: () => User[]
   updateUserRole: (userId: string, role: User['role']) => void
   updateUser: (userId: string, updates: Partial<User>) => void
+  deleteUser: (userId: string) => void
+  toggleUserVerification: (userId: string) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -49,6 +52,7 @@ const CURRENT_USER_KEY = 'believefundraising_current_user'
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
 
   // Load users and current user from localStorage on mount
   useEffect(() => {
@@ -75,6 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error parsing current user:', error)
       }
     }
+
+    setLoading(false)
   }, [])
 
   const initializeDefaultUsers = () => {
@@ -131,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: 'mike.chen@email.com',
         role: 'supporter',
         phone: '(555) 456-7890',
-        verified: true,
+        verified: false,
         twoFactorEnabled: false,
         profileImage: 'https://picsum.photos/id/32/32/32'
       }
@@ -158,42 +164,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user])
 
   const login = async (data: LoginData) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const foundUser = users.find(u => u.email === data.email)
-    if (foundUser) {
-      setUser(foundUser)
-    } else {
-      throw new Error('Invalid credentials')
+    setLoading(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      const foundUser = users.find(u => u.email === data.email)
+      if (foundUser) {
+        setUser(foundUser)
+      } else {
+        throw new Error('Invalid credentials')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
   const register = async (data: RegisterData) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // Check if user already exists
-    const existingUser = users.find(u => u.email === data.email)
-    if (existingUser) {
-      throw new Error('User already exists')
-    }
+    setLoading(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Check if user already exists
+      const existingUser = users.find(u => u.email === data.email)
+      if (existingUser) {
+        throw new Error('User already exists')
+      }
 
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name: data.name,
-      email: data.email,
-      role: data.role,
-      team: data.team,
-      position: data.position,
-      phone: data.phone,
-      verified: false,
-      twoFactorEnabled: false,
-      profileImage: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/32/32`
-    }
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        team: data.team,
+        position: data.position,
+        phone: data.phone,
+        verified: false,
+        twoFactorEnabled: false,
+        profileImage: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/32/32`
+      }
 
-    setUsers(prev => [...prev, newUser])
-    setUser(newUser)
+      setUsers(prev => [...prev, newUser])
+      setUser(newUser)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const logout = () => {
@@ -227,18 +243,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const deleteUser = (userId: string) => {
+    // Prevent deleting the current user or admin users
+    const userToDelete = users.find(u => u.id === userId)
+    if (userToDelete?.role === 'admin' || userId === user?.id) {
+      throw new Error('Cannot delete admin users or current user')
+    }
+
+    setUsers(prev => prev.filter(u => u.id !== userId))
+  }
+
+  const toggleUserVerification = (userId: string) => {
+    setUsers(prev => prev.map(u => 
+      u.id === userId ? { ...u, verified: !u.verified } : u
+    ))
+    
+    // Update current user if it's the same user
+    if (user && user.id === userId) {
+      setUser(prev => prev ? { ...prev, verified: !prev.verified } : null)
+    }
+  }
+
   const isAdmin = user?.role === 'admin'
 
   return (
     <AuthContext.Provider value={{
       user,
+      loading,
       login,
       register,
       logout,
       isAdmin,
       getAllUsers,
       updateUserRole,
-      updateUser
+      updateUser,
+      deleteUser,
+      toggleUserVerification
     }}>
       {children}
     </AuthContext.Provider>

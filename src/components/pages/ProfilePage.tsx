@@ -5,8 +5,8 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { Avatar } from '../ui/avatar'
 import { Badge } from '../ui/badge'
+import { Avatar } from '../ui/avatar'
 import { User, Mail, Phone, Shield, Camera, Save, Settings } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -124,25 +124,25 @@ export function ProfilePage() {
                 </div>
                 
                 <h2 className="text-xl font-bold text-gray-900 mb-2">{user.name}</h2>
-                <Badge className={getRoleBadgeColor(user.role)}>
+                <Badge className={`mb-4 ${getRoleBadgeColor(user.role)}`}>
                   {getRoleDisplayName(user.role)}
                 </Badge>
                 
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-center space-x-2 text-gray-600">
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center justify-center space-x-2">
                     <Mail className="w-4 h-4" />
-                    <span className="text-sm">{user.email}</span>
+                    <span>{user.email}</span>
                   </div>
                   {user.phone && (
-                    <div className="flex items-center justify-center space-x-2 text-gray-600">
+                    <div className="flex items-center justify-center space-x-2">
                       <Phone className="w-4 h-4" />
-                      <span className="text-sm">{user.phone}</span>
+                      <span>{user.phone}</span>
                     </div>
                   )}
                   {user.twoFactorEnabled && (
-                    <div className="flex items-center justify-center space-x-2 text-green-600">
-                      <Shield className="w-4 h-4" />
-                      <span className="text-sm">2FA Enabled</span>
+                    <div className="flex items-center justify-center space-x-2">
+                      <Shield className="w-4 h-4 text-green-600" />
+                      <span className="text-green-600">2FA Enabled</span>
                     </div>
                   )}
                 </div>
@@ -237,6 +237,8 @@ export function ProfilePage() {
                           placeholder="Enter school name"
                         />
                       </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                       <div>
                         <Label htmlFor="sport">Sport</Label>
                         <Input
@@ -244,7 +246,7 @@ export function ProfilePage() {
                           value={editing ? formData.sport : (user.sport || '')}
                           onChange={(e) => handleInputChange('sport', e.target.value)}
                           disabled={!editing}
-                          placeholder="Enter sport"
+                          placeholder="e.g., Basketball"
                         />
                       </div>
                       {user.role === 'student' && (
@@ -255,7 +257,7 @@ export function ProfilePage() {
                             value={editing ? formData.position : (user.position || '')}
                             onChange={(e) => handleInputChange('position', e.target.value)}
                             disabled={!editing}
-                            placeholder="Enter position"
+                            placeholder="e.g., Point Guard"
                           />
                         </div>
                       )}
@@ -291,11 +293,9 @@ export function ProfilePage() {
                   </div>
                 </div>
 
+                {/* Save Button */}
                 {editing && (
-                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-                    <Button variant="outline" onClick={() => setEditing(false)}>
-                      Cancel
-                    </Button>
+                  <div className="flex justify-end pt-6 border-t border-gray-200">
                     <Button onClick={handleSave} disabled={loading}>
                       {loading ? (
                         <>
