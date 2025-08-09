@@ -54,22 +54,36 @@ export function FundraisingDashboard() {
 
   const topSupporters = generateTopSupporters()
 
-  const handleShare = (campaign: any) => {
+  const handleShare = async (campaign: any) => {
     const url = `${window.location.origin}/team/${campaign.id}`
     const text = `Support ${campaign.team} - ${campaign.description}`
     
-    if (navigator.share) {
-      navigator.share({
-        title: campaign.title,
-        text: text,
-        url: url
-      }).catch(console.error)
-    } else {
-      navigator.clipboard.writeText(url).then(() => {
-        alert('Campaign link copied to clipboard!')
-      }).catch(() => {
-        alert(`Share this campaign: ${url}`)
-      })
+    try {
+      if (navigator.share && navigator.canShare) {
+        await navigator.share({
+          title: campaign.title,
+          text: text,
+          url: url
+        })
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(url)
+        
+        // Show success message
+        const notification = document.createElement('div')
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50'
+        notification.textContent = 'Campaign link copied to clipboard!'
+        document.body.appendChild(notification)
+        
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification)
+          }
+        }, 3000)
+      }
+    } catch (error) {
+      // Final fallback - show the URL in an alert
+      alert(`Share this campaign: ${url}`)
     }
   }
 
@@ -163,7 +177,12 @@ export function FundraisingDashboard() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => handleShare(campaign)}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleShare(campaign)
+                              }}
+                              title="Share campaign"
                             >
                               <Share2 className="w-4 h-4" />
                             </Button>

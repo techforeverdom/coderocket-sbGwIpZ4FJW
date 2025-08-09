@@ -16,22 +16,36 @@ export function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const { campaigns } = useCampaigns()
 
-  const handleShare = (campaign: any) => {
+  const handleShare = async (campaign: any) => {
     const url = `${window.location.origin}/team/${campaign.id}`
     const text = `Support ${campaign.team} - ${campaign.description}`
     
-    if (navigator.share) {
-      navigator.share({
-        title: campaign.title,
-        text: text,
-        url: url
-      }).catch(console.error)
-    } else {
-      navigator.clipboard.writeText(url).then(() => {
-        alert('Campaign link copied to clipboard!')
-      }).catch(() => {
-        alert(`Share this campaign: ${url}`)
-      })
+    try {
+      if (navigator.share && navigator.canShare) {
+        await navigator.share({
+          title: campaign.title,
+          text: text,
+          url: url
+        })
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(url)
+        
+        // Show success message
+        const notification = document.createElement('div')
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50'
+        notification.textContent = 'Campaign link copied to clipboard!'
+        document.body.appendChild(notification)
+        
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification)
+          }
+        }, 3000)
+      }
+    } catch (error) {
+      // Final fallback - show the URL in an alert
+      alert(`Share this campaign: ${url}`)
     }
   }
 
@@ -122,8 +136,13 @@ export function CampaignsPage() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="bg-white/20 hover:bg-white/30 text-white"
-                      onClick={() => handleShare(campaign)}
+                      className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleShare(campaign)
+                      }}
+                      title="Share this campaign"
                     >
                       <Share2 className="w-4 h-4" />
                     </Button>
@@ -176,11 +195,25 @@ export function CampaignsPage() {
                         Support Team
                       </Button>
                     </Link>
-                    <Link to={`/team/${campaign.id}`}>
-                      <Button variant="outline" className="w-full">
-                        View Details
+                    <div className="flex space-x-2">
+                      <Link to={`/team/${campaign.id}`} className="flex-1">
+                        <Button variant="outline" className="w-full">
+                          View Details
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleShare(campaign)
+                        }}
+                        title="Share campaign"
+                      >
+                        <Share2 className="w-4 h-4" />
                       </Button>
-                    </Link>
+                    </div>
                   </div>
                 </div>
               </Card>
