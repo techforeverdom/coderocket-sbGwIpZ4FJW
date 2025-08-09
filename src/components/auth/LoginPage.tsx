@@ -34,10 +34,10 @@ export function LoginPage() {
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-xl">T</span>
+            <span className="text-white font-bold text-xl">B</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Sign in to your Team Fundraising account</p>
+          <p className="text-gray-600 mt-2">Sign in to your Believe Fundraising Group account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

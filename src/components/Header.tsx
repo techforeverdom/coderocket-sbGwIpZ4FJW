@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from './ui/button'
 import { Avatar } from './ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
-import { Bell, Search, Menu, Plus, LogOut, User, Settings, Shield } from 'lucide-react'
+import { Bell, Search, Menu, Plus, LogOut, User, Settings, Shield, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export function Header() {
@@ -21,9 +21,9 @@ export function Header() {
           <div className="flex items-center space-x-4">
             <Link to="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">T</span>
+                <span className="text-white font-bold text-sm">B</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">Team Fundraising</span>
+              <span className="text-xl font-bold text-gray-900">Believe Fundraising Group</span>
             </Link>
           </div>
 
@@ -77,12 +77,20 @@ export function Header() {
                   Settings
                 </DropdownMenuItem>
                 {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin" className="flex items-center">
-                      <Shield className="mr-2 h-4 w-4" />
-                      Admin Panel
-                    </Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/manage-users" className="flex items-center">
+                        <Users className="mr-2 h-4 w-4" />
+                        Manage Users
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />

@@ -69,18 +69,18 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }
 
   const sendEmailVerification = async (email: string, name: string) => {
-    const subject = 'Verify Your Team Fundraising Account'
+    const subject = 'Verify Your Believe Fundraising Group Account'
     const message = `
 Hi ${name},
 
-Welcome to Team Fundraising! Please verify your email address by clicking the link below:
+Welcome to Believe Fundraising Group! Please verify your email address by clicking the link below:
 
-https://teamfundraising.com/verify?token=${btoa(email + Date.now())}
+https://believefundraising.com/verify?token=${btoa(email + Date.now())}
 
 This link will expire in 24 hours. If you didn't create this account, please ignore this email.
 
 Best regards,
-Team Fundraising Support Team
+Believe Fundraising Group Support Team
 
 ---
 This is an automated message. Please do not reply to this email.
@@ -109,11 +109,11 @@ You'll receive notifications about:
 - Important announcements from the team
 - Upcoming events and competitions
 
-To unsubscribe at any time, click here: https://teamfundraising.com/unsubscribe?token=${btoa(email + campaignId)}
+To unsubscribe at any time, click here: https://believefundraising.com/unsubscribe?token=${btoa(email + campaignId)}
 
 Thank you for supporting youth sports!
 
-Team Fundraising Platform
+Believe Fundraising Group
     `
     
     await sendEmailNotification(email, emailSubject, emailMessage)
@@ -147,11 +147,11 @@ WHAT HAPPENS NEXT:
 - Your donation will be used for equipment, travel, and competition fees
 - You may be eligible for a tax deduction (consult your tax advisor)
 
-Questions? Contact us at support@teamfundraising.com
+Questions? Contact us at support@believefundraising.com
 
 Thank you for supporting youth sports!
 
-Team Fundraising Platform
+Believe Fundraising Group
     `
     
     await sendEmailNotification(email, emailSubject, emailMessage)
@@ -189,11 +189,11 @@ You are now following ${teamName} and will receive updates about:
 - Fundraising events
 - Team meetings
 
-To stop following this team, click here: https://teamfundraising.com/unfollow?team=${btoa(teamName)}&email=${btoa(email)}
+To stop following this team, click here: https://believefundraising.com/unfollow?team=${btoa(teamName)}&email=${btoa(email)}
 
 Go ${teamName}!
 
-Team Fundraising Platform
+Believe Fundraising Group
     `
     
     await sendEmailNotification(email, emailSubject, emailMessage)

@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { NotificationProvider } from './contexts/NotificationContext'
-import { CampaignProvider } from './contexts/CampaignContext'
+import { CampaignProvider } from './contexts/CampaignProvider'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminRoute } from './components/AdminRoute'
 import { FundraisingDashboard } from './components/FundraisingDashboard'
@@ -17,6 +17,7 @@ import { AdminDashboard } from './components/admin/AdminDashboard'
 import { CreateCampaignPage } from './components/admin/CreateCampaignPage'
 import { EditCampaignPage } from './components/admin/EditCampaignPage'
 import { ManageCampaignsPage } from './components/admin/ManageCampaignsPage'
+import { ManageUsersPage } from './components/admin/ManageUsersPage'
 import { PaymentSuccess } from './components/payment/PaymentSuccess'
 import { PaymentCancel } from './components/payment/PaymentCancel'
 
@@ -82,6 +83,11 @@ function App() {
               <Route path="/admin/manage-campaigns" element={
                 <AdminRoute>
                   <ManageCampaignsPage />
+                </AdminRoute>
+              } />
+              <Route path="/admin/manage-users" element={
+                <AdminRoute>
+                  <ManageUsersPage />
                 </AdminRoute>
               } />
               <Route path="/payment/success" element={

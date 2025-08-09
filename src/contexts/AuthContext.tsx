@@ -24,6 +24,10 @@ interface AuthContextType {
   loading: boolean
   isAdmin: boolean
   enable2FA: (method: 'sms' | 'email') => Promise<void>
+  getAllUsers: () => User[]
+  updateUserRole: (userId: string, role: 'admin' | 'coach' | 'player' | 'supporter') => void
+  deleteUser: (userId: string) => void
+  toggleUserVerification: (userId: string) => void
 }
 
 interface RegisterData {
@@ -49,25 +53,45 @@ interface MockUser {
   verified: boolean
   twoFactorEnabled?: boolean
   twoFactorMethod?: 'sms' | 'email'
+  phone?: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Mock user database - only admin account exists by default
-const mockUsers: MockUser[] = [
-  {
-    id: '1',
-    email: 'admin@teamfundraising.com',
-    password: 'admin123',
-    name: 'System Administrator',
-    role: 'admin',
-    verified: true
+const USERS_STORAGE_KEY = 'believefundraising_users'
+
+// Initialize with admin account
+const getInitialUsers = (): MockUser[] => {
+  const savedUsers = localStorage.getItem(USERS_STORAGE_KEY)
+  if (savedUsers) {
+    return JSON.parse(savedUsers)
   }
-]
+  
+  const defaultUsers: MockUser[] = [
+    {
+      id: '1',
+      email: 'admin@believefundraising.com',
+      password: 'admin123',
+      name: 'System Administrator',
+      role: 'admin',
+      verified: true,
+      phone: '(555) 123-4567'
+    }
+  ]
+  
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(defaultUsers))
+  return defaultUsers
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mockUsers, setMockUsers] = useState<MockUser[]>(getInitialUsers)
+
+  // Save users to localStorage whenever mockUsers changes
+  useEffect(() => {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(mockUsers))
+  }, [mockUsers])
 
   useEffect(() => {
     // Check for existing session
@@ -103,7 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sport: foundUser.sport,
         verified: foundUser.verified,
         twoFactorEnabled: foundUser.twoFactorEnabled,
-        twoFactorMethod: foundUser.twoFactorMethod
+        twoFactorMethod: foundUser.twoFactorMethod,
+        phone: foundUser.phone
       }
       
       setUser(userData)
@@ -143,8 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...newUser,
         password: userData.password
       }
-      mockUsers.push(newMockUser)
       
+      setMockUsers(prev => [...prev, newMockUser])
       setUser(newUser)
       localStorage.setItem('user', JSON.stringify(newUser))
     } catch (error) {
@@ -164,17 +189,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     // Update mock database
-    const userIndex = mockUsers.findIndex(u => u.id === user.id)
-    if (userIndex !== -1) {
-      mockUsers[userIndex] = {
-        ...mockUsers[userIndex],
-        twoFactorEnabled: true,
-        twoFactorMethod: method
-      }
-    }
+    setMockUsers(prev => prev.map(u => 
+      u.id === user.id 
+        ? { ...u, twoFactorEnabled: true, twoFactorMethod: method }
+        : u
+    ))
     
     setUser(updatedUser)
     localStorage.setItem('user', JSON.stringify(updatedUser))
+  }
+
+  const getAllUsers = (): User[] => {
+    return mockUsers.map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      team: u.team,
+      position: u.position,
+      school: u.school,
+      sport: u.sport,
+      verified: u.verified,
+      twoFactorEnabled: u.twoFactorEnabled,
+      twoFactorMethod: u.twoFactorMethod,
+      phone: u.phone
+    }))
+  }
+
+  const updateUserRole = (userId: string, role: 'admin' | 'coach' | 'player' | 'supporter') => {
+    setMockUsers(prev => prev.map(u => 
+      u.id === userId ? { ...u, role } : u
+    ))
+    
+    // Update current user if it's the same user
+    if (user && user.id === userId) {
+      const updatedUser = { ...user, role }
+      setUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+    }
+  }
+
+  const deleteUser = (userId: string) => {
+    setMockUsers(prev => prev.filter(u => u.id !== userId))
+    
+    // If deleting current user, logout
+    if (user && user.id === userId) {
+      logout()
+    }
+  }
+
+  const toggleUserVerification = (userId: string) => {
+    setMockUsers(prev => prev.map(u => 
+      u.id === userId ? { ...u, verified: !u.verified } : u
+    ))
+    
+    // Update current user if it's the same user
+    if (user && user.id === userId) {
+      const updatedUser = { ...user, verified: !user.verified }
+      setUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+    }
   }
 
   const logout = () => {
@@ -185,7 +259,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === 'admin'
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading, isAdmin, enable2FA }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      register, 
+      logout, 
+      loading, 
+      isAdmin, 
+      enable2FA,
+      getAllUsers,
+      updateUserRole,
+      deleteUser,
+      toggleUserVerification
+    }}>
       {children}
     </AuthContext.Provider>
   )

@@ -13,13 +13,17 @@ import {
   BarChart3,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  UserCog
 } from 'lucide-react'
 import { useCampaigns } from '../../contexts/CampaignContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 export function AdminDashboard() {
   const { campaigns, deleteCampaign } = useCampaigns()
+  const { getAllUsers } = useAuth()
   
+  const allUsers = getAllUsers()
   const totalRaised = campaigns.reduce((sum, campaign) => sum + campaign.raised, 0)
   const totalSupporters = campaigns.reduce((sum, campaign) => sum + campaign.supporters, 0)
   const pendingCampaigns = campaigns.filter(c => c.status === 'pending').length
@@ -38,9 +42,9 @@ export function AdminDashboard() {
       icon: <DollarSign className="w-6 h-6 text-green-600" />
     },
     {
-      title: "Total Supporters",
-      value: totalSupporters.toLocaleString(),
-      change: "Active donors",
+      title: "Total Users",
+      value: allUsers.length.toString(),
+      change: `${allUsers.filter(u => u.verified).length} verified`,
       icon: <Users className="w-6 h-6 text-purple-600" />
     },
     {
@@ -92,6 +96,12 @@ export function AdminDashboard() {
               <Button variant="outline">
                 <Settings className="w-4 h-4 mr-2" />
                 Manage Campaigns
+              </Button>
+            </Link>
+            <Link to="/admin/manage-users">
+              <Button variant="outline">
+                <UserCog className="w-4 h-4 mr-2" />
+                Manage Users
               </Button>
             </Link>
           </div>
