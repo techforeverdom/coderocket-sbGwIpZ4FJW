@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { NotificationProvider } from './contexts/NotificationContext'
-import { CampaignProvider } from './contexts/CampaignProvider'
+import { CampaignProvider } from './contexts/CampaignContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminRoute } from './components/AdminRoute'
 import { FundraisingDashboard } from './components/FundraisingDashboard'
