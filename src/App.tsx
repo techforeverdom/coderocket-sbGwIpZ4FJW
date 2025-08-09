@@ -13,6 +13,7 @@ import { CampaignsPage } from './components/pages/CampaignsPage'
 import { TeamsPage } from './components/pages/TeamsPage'
 import { TeamPage } from './components/pages/TeamPage'
 import { CampaignRequestPage } from './components/pages/CampaignRequestPage'
+import { ContactPage } from './components/pages/ContactPage'
 import { ProfilePage } from './components/pages/ProfilePage'
 import { AdminDashboard } from './components/admin/AdminDashboard'
 import { CreateCampaignPage } from './components/admin/CreateCampaignPage'
@@ -61,6 +62,11 @@ function App() {
                 <Route path="/request-campaign" element={
                   <ProtectedRoute>
                     <CampaignRequestPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/contact" element={
+                  <ProtectedRoute>
+                    <ContactPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/profile" element={

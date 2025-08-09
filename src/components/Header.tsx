@@ -4,13 +4,15 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Avatar } from './ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
-import { Bell, Search, Menu, Plus, LogOut, User, Settings, Shield, Users, FileText, ClipboardList, X } from 'lucide-react'
+import { Bell, Search, Menu, Plus, LogOut, User, Settings, Shield, Users, FileText, ClipboardList, X, ExternalLink, Trash2, CheckCheck, MessageCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useCampaigns } from '../contexts/CampaignContext'
+import { useNotifications } from '../contexts/NotificationContext'
 
 export function Header() {
   const { user, logout, isAdmin } = useAuth()
   const { campaigns } = useCampaigns()
+  const { getUserNotifications, unreadCount, markAsRead, removeNotification, markAllAsRead } = useNotifications()
   const navigate = useNavigate()
   const [showSearch, setShowSearch] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -37,39 +39,41 @@ export function Header() {
     campaign.sport.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 5)
 
-  // Mock notifications - in real app these would come from a notifications context
-  const notifications = [
-    {
-      id: 1,
-      title: 'New donation received',
-      message: 'Eagles Basketball Team received a $50 donation',
-      time: '2 minutes ago',
-      unread: true
-    },
-    {
-      id: 2,
-      title: 'Campaign milestone reached',
-      message: 'Warriors Football reached 75% of their goal!',
-      time: '1 hour ago',
-      unread: true
-    },
-    {
-      id: 3,
-      title: 'New team joined',
-      message: 'Soccer Stars created a new campaign',
-      time: '3 hours ago',
-      unread: false
-    },
-    {
-      id: 4,
-      title: 'Weekly summary',
-      message: 'Your weekly fundraising report is ready',
-      time: '1 day ago',
-      unread: false
-    }
-  ]
+  const userNotifications = user ? getUserNotifications(user.id) : []
 
-  const unreadCount = notifications.filter(n => n.unread).length
+  const handleNotificationClick = (notification: any) => {
+    markAsRead(notification.id)
+    if (notification.actionUrl) {
+      navigate(notification.actionUrl)
+      setShowNotifications(false)
+    } else if (notification.relatedId) {
+      navigate(`/team/${notification.relatedId}`)
+      setShowNotifications(false)
+    }
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'donation': return '💰'
+      case 'milestone': return '🎯'
+      case 'team_update': return '📢'
+      case 'account': return '👤'
+      case 'system': return '⚙️'
+      case 'contact_response': return '📧'
+      default: return '📢'
+    }
+  }
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date()
+    const time = new Date(timestamp)
+    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
+    
+    if (diffInMinutes < 1) return 'Just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
+    return `${Math.floor(diffInMinutes / 1440)}d ago`
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -89,6 +93,7 @@ export function Header() {
             <Link to="/campaigns" className="text-gray-700 hover:text-blue-600 font-medium">Campaigns</Link>
             <Link to="/teams" className="text-gray-700 hover:text-blue-600 font-medium">Teams</Link>
             <Link to="/request-campaign" className="text-gray-700 hover:text-blue-600 font-medium">Request Campaign</Link>
+            <Link to="/contact" className="text-gray-700 hover:text-blue-600 font-medium">Contact Us</Link>
             {isAdmin && (
               <Link to="/admin" className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1">
                 <Shield className="w-4 h-4" />
@@ -185,59 +190,95 @@ export function Header() {
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadCount}
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="absolute right-0 top-full mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-gray-900">Notifications</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowNotifications(false)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        {unreadCount > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={markAllAsRead}
+                            title="Mark all as read"
+                          >
+                            <CheckCheck className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowNotifications(false)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                     
-                    <div className="space-y-3 max-h-80 overflow-y-auto">
-                      {notifications.map(notification => (
-                        <div
-                          key={notification.id}
-                          className={`p-3 rounded-lg border ${
-                            notification.unread 
-                              ? 'bg-blue-50 border-blue-200' 
-                              : 'bg-gray-50 border-gray-200'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="font-medium text-gray-900 text-sm">
-                                {notification.title}
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {userNotifications.length > 0 ? (
+                        userNotifications.map(notification => (
+                          <div
+                            key={notification.id}
+                            className={`group relative p-3 rounded-lg border cursor-pointer transition-colors ${
+                              !notification.read 
+                                ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' 
+                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleNotificationClick(notification)}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-3 flex-1">
+                                <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-gray-900 text-sm">
+                                    {notification.title}
+                                  </div>
+                                  <div className="text-gray-600 text-sm mt-1 line-clamp-2">
+                                    {notification.message}
+                                  </div>
+                                  <div className="flex items-center justify-between mt-2">
+                                    <div className="text-gray-400 text-xs">
+                                      {formatTimeAgo(notification.timestamp)}
+                                    </div>
+                                    {notification.actionUrl && (
+                                      <ExternalLink className="w-3 h-3 text-gray-400" />
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-gray-600 text-sm mt-1">
-                                {notification.message}
-                              </div>
-                              <div className="text-gray-400 text-xs mt-2">
-                                {notification.time}
+                              <div className="flex items-center space-x-1">
+                                {!notification.read && (
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    removeNotification(notification.id)
+                                  }}
+                                  title="Remove notification"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
                               </div>
                             </div>
-                            {notification.unread && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
-                            )}
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p>No notifications yet</p>
                         </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-4 pt-3 border-t border-gray-200">
-                      <Button variant="ghost" size="sm" className="w-full text-blue-600">
-                        View All Notifications
-                      </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -276,6 +317,12 @@ export function Header() {
                   <Link to="/request-campaign" className="flex items-center">
                     <FileText className="mr-2 h-4 w-4" />
                     Request Campaign
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/contact" className="flex items-center">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Contact Us
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (
