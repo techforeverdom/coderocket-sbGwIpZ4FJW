@@ -6,7 +6,7 @@ import { Badge } from '../ui/badge'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { Search, Filter, Eye, Check, X, Clock, FileText, Mail } from 'lucide-react'
+import { Search, Filter, Eye, Check, X, Clock, FileText, Mail, Globe, Facebook, Instagram, Twitter, Youtube } from 'lucide-react'
 import { useCampaignRequests } from '../../contexts/CampaignRequestContext'
 import { useCampaigns } from '../../contexts/CampaignContext'
 import { useNotifications } from '../../contexts/NotificationContext'
@@ -33,6 +33,17 @@ export function ReviewRequestsPage() {
     }
   }
 
+  const getSocialIcon = (platform: string) => {
+    switch (platform) {
+      case 'website': return <Globe className="w-4 h-4" />
+      case 'facebook': return <Facebook className="w-4 h-4" />
+      case 'instagram': return <Instagram className="w-4 h-4" />
+      case 'twitter': return <Twitter className="w-4 h-4" />
+      case 'youtube': return <Youtube className="w-4 h-4" />
+      default: return <Globe className="w-4 h-4" />
+    }
+  }
+
   const handleApprove = async (request: any) => {
     try {
       // Create the campaign
@@ -48,7 +59,8 @@ export function ReviewRequestsPage() {
         story: request.story,
         deadline: request.deadline,
         coachName: request.coachName,
-        coachEmail: request.coachEmail
+        coachEmail: request.coachEmail,
+        socialMedia: request.socialMedia
       })
 
       // Update request status
@@ -63,6 +75,8 @@ CAMPAIGN DETAILS:
 - Title: ${request.campaignTitle}
 - Team: ${request.teamName}
 - Goal: $${request.goalAmount.toLocaleString()}
+- Start Date: ${request.startDate}
+- Deadline: ${request.deadline}
 - Status: Active
 
 NEXT STEPS:
@@ -196,7 +210,7 @@ The Believe Fundraising Group Team
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Campaign</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Team & School</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Goal</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Goal & Timeline</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Submitted</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
@@ -217,7 +231,7 @@ The Believe Fundraising Group Team
                     </td>
                     <td className="py-4 px-4">
                       <div className="font-medium">${request.goalAmount.toLocaleString()}</div>
-                      <div className="text-sm text-gray-500">by {request.deadline}</div>
+                      <div className="text-sm text-gray-500">{request.startDate} - {request.deadline}</div>
                     </td>
                     <td className="py-4 px-4">{getStatusBadge(request.status)}</td>
                     <td className="py-4 px-4">
@@ -297,6 +311,7 @@ The Believe Fundraising Group Team
                       <div><span className="font-medium">School:</span> {selectedRequest.school}</div>
                       <div><span className="font-medium">Sport:</span> {selectedRequest.sport}</div>
                       <div><span className="font-medium">Goal:</span> ${selectedRequest.goalAmount.toLocaleString()}</div>
+                      <div><span className="font-medium">Start Date:</span> {selectedRequest.startDate}</div>
                       <div><span className="font-medium">Deadline:</span> {selectedRequest.deadline}</div>
                     </div>
                   </div>
@@ -309,6 +324,27 @@ The Believe Fundraising Group Team
                     </div>
                   </div>
                 </div>
+
+                {/* Social Media Links */}
+                {selectedRequest.socialMedia && Object.values(selectedRequest.socialMedia).some((url: any) => url) && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-gray-900 mb-3">Social Media & Online Presence</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {Object.entries(selectedRequest.socialMedia).map(([platform, url]: [string, any]) => {
+                        if (!url) return null
+                        return (
+                          <div key={platform} className="flex items-center space-x-2 text-sm">
+                            {getSocialIcon(platform)}
+                            <span className="font-medium capitalize">{platform}:</span>
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                              {url}
+                            </a>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4 mb-6">
                   <div>
@@ -323,6 +359,12 @@ The Believe Fundraising Group Team
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">How Funds Will Be Used</h3>
                       <p className="text-gray-700">{selectedRequest.expenses}</p>
+                    </div>
+                  )}
+                  {selectedRequest.achievements && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Recent Achievements</h3>
+                      <p className="text-gray-700">{selectedRequest.achievements}</p>
                     </div>
                   )}
                 </div>

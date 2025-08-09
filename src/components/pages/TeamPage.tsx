@@ -8,7 +8,7 @@ import { Progress } from '../ui/progress'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Label } from '../ui/label'
-import { Share2, Heart, Flag, Trophy, MapPin, Calendar, Users } from 'lucide-react'
+import { Share2, Heart, Flag, Trophy, MapPin, Calendar, Users, Globe, Facebook, Instagram, Twitter, Youtube } from 'lucide-react'
 import { useCampaigns } from '../../contexts/CampaignContext'
 import { useNotifications } from '../../contexts/NotificationContext'
 import { useAuth } from '../../contexts/AuthContext'
@@ -53,22 +53,41 @@ export function TeamPage() {
     }
   }
 
-  const handleShare = () => {
+  const handleShare = async (event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
     const url = window.location.href
     const text = `Support ${campaign.team} - ${campaign.description}`
     
-    if (navigator.share) {
-      navigator.share({
-        title: campaign.title,
-        text: text,
-        url: url
-      }).catch(console.error)
-    } else {
-      navigator.clipboard.writeText(url).then(() => {
-        alert('Team link copied to clipboard!')
-      }).catch(() => {
-        alert(`Share this team: ${url}`)
-      })
+    try {
+      if (navigator.share && navigator.canShare) {
+        await navigator.share({
+          title: campaign.title,
+          text: text,
+          url: url
+        })
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(url)
+        
+        // Show success message
+        const notification = document.createElement('div')
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50'
+        notification.textContent = 'Team link copied to clipboard!'
+        document.body.appendChild(notification)
+        
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification)
+          }
+        }, 3000)
+      }
+    } catch (error) {
+      // Final fallback - show the URL in an alert
+      alert(`Share this team: ${url}`)
     }
   }
 
@@ -116,6 +135,17 @@ Believe Fundraising Group Admin System
       setReportData({ reason: '', description: '' })
     } catch (error) {
       alert('Failed to submit report. Please try again.')
+    }
+  }
+
+  const getSocialIcon = (platform: string) => {
+    switch (platform) {
+      case 'website': return <Globe className="w-4 h-4" />
+      case 'facebook': return <Facebook className="w-4 h-4" />
+      case 'instagram': return <Instagram className="w-4 h-4" />
+      case 'twitter': return <Twitter className="w-4 h-4" />
+      case 'youtube': return <Youtube className="w-4 h-4" />
+      default: return <Globe className="w-4 h-4" />
     }
   }
 
@@ -224,6 +254,30 @@ Believe Fundraising Group Admin System
                         <h3 className="font-semibold text-gray-900">Team Leadership</h3>
                       </div>
                       <p className="text-gray-700">Coach: {campaign.coachName}</p>
+                    </div>
+                  )}
+
+                  {/* Social Media Links */}
+                  {campaign.socialMedia && Object.values(campaign.socialMedia).some(url => url) && (
+                    <div className="mb-6">
+                      <h3 className="font-semibold text-gray-900 mb-3">Follow Our Team</h3>
+                      <div className="flex flex-wrap gap-3">
+                        {Object.entries(campaign.socialMedia).map(([platform, url]) => {
+                          if (!url) return null
+                          return (
+                            <a
+                              key={platform}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                            >
+                              {getSocialIcon(platform)}
+                              <span className="text-sm font-medium capitalize">{platform}</span>
+                            </a>
+                          )
+                        })}
+                      </div>
                     </div>
                   )}
 

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Header } from '../Header'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
@@ -11,12 +11,26 @@ import { Search, Filter, MapPin, Calendar, Users, Share2 } from 'lucide-react'
 import { useCampaigns } from '../../contexts/CampaignContext'
 
 export function CampaignsPage() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchParams] = useSearchParams()
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
   const [sportFilter, setSportFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const { campaigns } = useCampaigns()
 
-  const handleShare = async (campaign: any) => {
+  // Update search term when URL search param changes
+  useEffect(() => {
+    const urlSearch = searchParams.get('search')
+    if (urlSearch) {
+      setSearchTerm(urlSearch)
+    }
+  }, [searchParams])
+
+  const handleShare = async (campaign: any, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
     const url = `${window.location.origin}/team/${campaign.id}`
     const text = `Support ${campaign.team} - ${campaign.description}`
     
@@ -69,6 +83,11 @@ export function CampaignsPage() {
           <p className="text-gray-600">
             Discover and support sports teams working towards their goals
           </p>
+          {searchTerm && (
+            <p className="text-blue-600 mt-2">
+              Showing results for: "{searchTerm}"
+            </p>
+          )}
         </div>
 
         {/* Filters */}
@@ -137,11 +156,7 @@ export function CampaignsPage() {
                       variant="ghost" 
                       size="sm" 
                       className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        handleShare(campaign)
-                      }}
+                      onClick={(e) => handleShare(campaign, e)}
                       title="Share this campaign"
                     >
                       <Share2 className="w-4 h-4" />
@@ -204,11 +219,7 @@ export function CampaignsPage() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleShare(campaign)
-                        }}
+                        onClick={(e) => handleShare(campaign, e)}
                         title="Share campaign"
                       >
                         <Share2 className="w-4 h-4" />
@@ -224,7 +235,12 @@ export function CampaignsPage() {
         {filteredCampaigns.length === 0 && (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Campaigns Found</h3>
-            <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
+            <p className="text-gray-600">
+              {searchTerm 
+                ? `No campaigns match "${searchTerm}". Try adjusting your search or filter criteria.`
+                : 'Try adjusting your search or filter criteria.'
+              }
+            </p>
           </div>
         )}
       </main>

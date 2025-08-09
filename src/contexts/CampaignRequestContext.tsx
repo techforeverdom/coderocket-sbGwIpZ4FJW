@@ -1,5 +1,14 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 
+interface SocialMedia {
+  website: string
+  facebook: string
+  instagram: string
+  twitter: string
+  youtube: string
+  tiktok: string
+}
+
 interface CampaignRequest {
   id: string
   teamName: string
@@ -10,12 +19,13 @@ interface CampaignRequest {
   coachPhone: string
   campaignTitle: string
   goalAmount: number
+  startDate: string
   deadline: string
   description: string
   story: string
   expenses?: string
   achievements?: string
-  socialMedia?: string
+  socialMedia: SocialMedia
   additionalInfo?: string
   submittedBy: string
   submitterName: string

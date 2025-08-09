@@ -1,5 +1,14 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 
+interface SocialMedia {
+  website?: string
+  facebook?: string
+  instagram?: string
+  twitter?: string
+  youtube?: string
+  tiktok?: string
+}
+
 interface Campaign {
   id: string
   title: string
@@ -17,6 +26,7 @@ interface Campaign {
   deadline: string
   coachName?: string
   coachEmail?: string
+  socialMedia?: SocialMedia
 }
 
 interface CampaignContextType {
@@ -70,7 +80,13 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         created: '2024-01-15',
         deadline: '2024-03-15',
         coachName: 'Coach Johnson',
-        coachEmail: 'coach.johnson@lincolnhigh.edu'
+        coachEmail: 'coach.johnson@lincolnhigh.edu',
+        socialMedia: {
+          website: 'https://lincolnhigh.edu/athletics/basketball',
+          instagram: 'https://instagram.com/lincolneagles',
+          facebook: 'https://facebook.com/lincolneaglesbasketball',
+          twitter: 'https://twitter.com/lincolneagles'
+        }
       },
       {
         id: 'warriors-football-2024',
@@ -88,7 +104,12 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         created: '2024-01-10',
         deadline: '2024-02-28',
         coachName: 'Coach Martinez',
-        coachEmail: 'coach.martinez@centralhigh.edu'
+        coachEmail: 'coach.martinez@centralhigh.edu',
+        socialMedia: {
+          website: 'https://centralhigh.edu/athletics/football',
+          instagram: 'https://instagram.com/centralwarriors',
+          youtube: 'https://youtube.com/@centralwarriors'
+        }
       }
     ]
     setCampaigns(defaultCampaigns)
