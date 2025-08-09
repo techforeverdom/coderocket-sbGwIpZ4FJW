@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: 'mike.chen@email.com',
         role: 'supporter',
         phone: '(555) 456-7890',
-        verified: false,
+        verified: true,
         twoFactorEnabled: false,
         profileImage: 'https://picsum.photos/id/32/32/32'
       }
@@ -244,10 +244,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteUser = (userId: string) => {
-    // Prevent deleting the current user or admin users
-    const userToDelete = users.find(u => u.id === userId)
-    if (userToDelete?.role === 'admin' || userId === user?.id) {
-      throw new Error('Cannot delete admin users or current user')
+    // Prevent deleting the current user or the main admin
+    if (userId === user?.id || userId === 'admin-1') {
+      throw new Error('Cannot delete this user')
     }
 
     setUsers(prev => prev.filter(u => u.id !== userId))
