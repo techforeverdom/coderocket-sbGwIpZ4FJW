@@ -2,108 +2,81 @@ import { Header } from '../Header'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
+import { Users, Target, TrendingUp, AlertCircle, Plus, Settings, BarChart3, FileText } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
-  AlertCircle, 
-  Plus, 
-  Settings, 
-  BarChart3,
-  Eye,
-  Edit,
-  Trash2,
-  UserCog
-} from 'lucide-react'
-import { useCampaigns } from '../../contexts/CampaignContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCampaigns } from '../../contexts/CampaignContext'
+import { useCampaignRequests } from '../../contexts/CampaignRequestContext'
 
 export function AdminDashboard() {
-  const { campaigns, deleteCampaign } = useCampaigns()
   const { getAllUsers } = useAuth()
+  const { campaigns } = useCampaigns()
+  const { requests } = useCampaignRequests()
   
   const allUsers = getAllUsers()
-  const totalRaised = campaigns.reduce((sum, campaign) => sum + campaign.raised, 0)
-  const totalSupporters = campaigns.reduce((sum, campaign) => sum + campaign.supporters, 0)
-  const pendingCampaigns = campaigns.filter(c => c.status === 'pending').length
-  
+  const activeCampaigns = campaigns.filter(c => c.status === 'active')
+  const totalRaised = campaigns.reduce((sum, c) => sum + c.raised, 0)
+  const pendingRequests = requests.filter(r => r.status === 'pending')
+
   const stats = [
     {
-      title: "Total Campaigns",
-      value: campaigns.length.toString(),
-      change: `${campaigns.filter(c => c.status === 'active').length} active`,
-      icon: <BarChart3 className="w-6 h-6 text-blue-600" />
+      title: 'Total Users',
+      value: allUsers.length,
+      icon: Users,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+      breakdown: [
+        { label: 'Students', count: allUsers.filter(u => u.role === 'student').length },
+        { label: 'Coaches', count: allUsers.filter(u => u.role === 'coach').length },
+        { label: 'Parents', count: allUsers.filter(u => u.role === 'parent').length },
+        { label: 'Supporters', count: allUsers.filter(u => u.role === 'supporter').length }
+      ]
     },
     {
-      title: "Total Raised",
+      title: 'Active Campaigns',
+      value: activeCampaigns.length,
+      icon: Target,
+      color: 'text-green-600',
+      bgColor: 'bg-green-100'
+    },
+    {
+      title: 'Total Raised',
       value: `$${totalRaised.toLocaleString()}`,
-      change: "Across all campaigns",
-      icon: <DollarSign className="w-6 h-6 text-green-600" />
+      icon: TrendingUp,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100'
     },
     {
-      title: "Total Users",
-      value: allUsers.length.toString(),
-      change: `${allUsers.filter(u => u.verified).length} verified`,
-      icon: <Users className="w-6 h-6 text-purple-600" />
-    },
-    {
-      title: "Pending Reviews",
-      value: pendingCampaigns.toString(),
-      change: pendingCampaigns > 0 ? "Requires attention" : "All reviewed",
-      icon: <AlertCircle className="w-6 h-6 text-orange-600" />
+      title: 'Pending Requests',
+      value: pendingRequests.length,
+      icon: AlertCircle,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100'
     }
   ]
-
-  const recentCampaigns = campaigns.slice(0, 5)
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending Review</Badge>
-      case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>
-      case 'paused':
-        return <Badge className="bg-gray-100 text-gray-800">Paused</Badge>
-      default:
-        return <Badge variant="secondary">{status}</Badge>
-    }
-  }
-
-  const handleDelete = (campaignId: string, campaignTitle: string) => {
-    if (confirm(`Are you sure you want to delete "${campaignTitle}"? This action cannot be undone.`)) {
-      deleteCampaign(campaignId)
-      alert('Campaign deleted successfully')
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <Link to="/admin/create-campaign">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Campaign
-              </Button>
-            </Link>
-            <Link to="/admin/manage-campaigns">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-gray-600">Manage your fundraising platform</p>
+            </div>
+            <div className="flex space-x-4">
+              <Link to="/admin/create-campaign">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Campaign
+                </Button>
+              </Link>
               <Button variant="outline">
                 <Settings className="w-4 h-4 mr-2" />
-                Manage Campaigns
+                Settings
               </Button>
-            </Link>
-            <Link to="/admin/manage-users">
-              <Button variant="outline">
-                <UserCog className="w-4 h-4 mr-2" />
-                Manage Users
-              </Button>
-            </Link>
+            </div>
           </div>
         </div>
 
@@ -115,14 +88,83 @@ export function AdminDashboard() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
                   <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm text-gray-500">{stat.change}</p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  {stat.icon}
+                <div className={`p-3 rounded-full ${stat.bgColor}`}>
+                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
                 </div>
               </div>
+              {stat.breakdown && (
+                <div className="mt-4 space-y-1">
+                  {stat.breakdown.map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span className="text-gray-600">{item.label}</span>
+                      <span className="font-medium">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           ))}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <Card className="p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+            <div className="space-y-3">
+              <Link to="/admin/create-campaign">
+                <Button variant="outline" className="w-full justify-start">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Campaign
+                </Button>
+              </Link>
+              <Link to="/admin/manage-users">
+                <Button variant="outline" className="w-full justify-start">
+                  <Users className="w-4 h-4 mr-2" />
+                  Manage Users
+                </Button>
+              </Link>
+              <Link to="/admin/review-requests">
+                <Button variant="outline" className="w-full justify-start">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Review Campaign Requests
+                </Button>
+              </Link>
+              <Link to="/admin/manage-campaigns">
+                <Button variant="outline" className="w-full justify-start">
+                  <Target className="w-4 h-4 mr-2" />
+                  Manage Campaigns
+                </Button>
+              </Link>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h2>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">New user registered</p>
+                  <p className="text-xs text-gray-500">2 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Campaign request submitted</p>
+                  <p className="text-xs text-gray-500">15 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Donation received</p>
+                  <p className="text-xs text-gray-500">1 hour ago</p>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Recent Campaigns */}
@@ -130,10 +172,13 @@ export function AdminDashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">Recent Campaigns</h2>
             <Link to="/admin/manage-campaigns">
-              <Button variant="outline" size="sm">View All</Button>
+              <Button variant="outline" size="sm">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                View All
+              </Button>
             </Link>
           </div>
-
+          
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -142,51 +187,39 @@ export function AdminDashboard() {
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Team</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Progress</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Created</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {recentCampaigns.map((campaign) => (
-                  <tr key={campaign.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-4">
+                {campaigns.slice(0, 5).map((campaign) => (
+                  <tr key={campaign.id} className="border-b border-gray-100">
+                    <td className="py-3 px-4">
                       <div className="font-medium text-gray-900">{campaign.title}</div>
                       <div className="text-sm text-gray-500">{campaign.sport}</div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-4">
                       <div className="text-gray-900">{campaign.team}</div>
                       <div className="text-sm text-gray-500">{campaign.school}</div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-4">
                       <div className="text-sm">
                         ${campaign.raised.toLocaleString()} / ${campaign.goal.toLocaleString()}
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${Math.min((campaign.raised / campaign.goal) * 100, 100)}%` }}
-                        ></div>
+                      <div className="text-xs text-gray-500">
+                        {((campaign.raised / campaign.goal) * 100).toFixed(1)}% funded
                       </div>
                     </td>
-                    <td className="py-4 px-4">{getStatusBadge(campaign.status)}</td>
-                    <td className="py-4 px-4 text-gray-600">{campaign.created}</td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center space-x-2">
+                    <td className="py-3 px-4">
+                      <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+                        {campaign.status}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4">
+                      <Link to={`/admin/edit-campaign/${campaign.id}`}>
                         <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
+                          Edit
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() => handleDelete(campaign.id, campaign.title)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      </Link>
                     </td>
                   </tr>
                 ))}

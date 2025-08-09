@@ -8,6 +8,8 @@ interface User {
   team?: string
   position?: string
   phone?: string
+  school?: string
+  sport?: string
   profileImage?: string
   verified: boolean
   twoFactorEnabled?: boolean
@@ -83,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: 'admin@believefundraising.com',
         role: 'admin',
         verified: true,
+        twoFactorEnabled: false,
         profileImage: 'https://picsum.photos/id/64/32/32'
       },
       {
@@ -91,8 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: 'coach.johnson@lincolnhigh.edu',
         role: 'coach',
         team: 'Eagles Basketball Team',
+        school: 'Lincoln High School',
+        sport: 'Basketball',
         phone: '(555) 123-4567',
         verified: true,
+        twoFactorEnabled: true,
         profileImage: 'https://picsum.photos/id/91/32/32'
       },
       {
@@ -101,9 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: 'alex.thompson@student.lincolnhigh.edu',
         role: 'student',
         team: 'Eagles Basketball Team',
+        school: 'Lincoln High School',
+        sport: 'Basketball',
         position: 'Point Guard',
         phone: '(555) 234-5678',
         verified: true,
+        twoFactorEnabled: false,
         profileImage: 'https://picsum.photos/id/22/32/32'
       },
       {
@@ -113,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: 'parent',
         phone: '(555) 345-6789',
         verified: true,
+        twoFactorEnabled: false,
         profileImage: 'https://picsum.photos/id/65/32/32'
       },
       {
@@ -122,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: 'supporter',
         phone: '(555) 456-7890',
         verified: true,
+        twoFactorEnabled: false,
         profileImage: 'https://picsum.photos/id/32/32/32'
       }
     ]
@@ -177,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       position: data.position,
       phone: data.phone,
       verified: false,
+      twoFactorEnabled: false,
       profileImage: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/32/32`
     }
 
