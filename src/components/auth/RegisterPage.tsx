@@ -1,150 +1,94 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
-import { Card } from '../ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
+import { Eye, EyeOff, UserPlus, Mail } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotifications } from '../../contexts/NotificationContext'
 
 export function RegisterPage() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [verificationSent, setVerificationSent] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: '' as 'coach' | 'player' | 'supporter' | '',
-    phone: '',
+    role: '',
     team: '',
-    position: ''
+    position: '',
+    phone: ''
   })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [verificationSent, setVerificationSent] = useState(false)
+
   const { register } = useAuth()
   const { sendEmailVerification } = useNotifications()
   const navigate = useNavigate()
 
-  const validatePhone = (phone: string) => {
-    // Remove all non-digit characters
-    const cleaned = phone.replace(/\D/g, '')
-    
-    // Check if it's a valid US phone number (10 digits) or international (7-15 digits)
-    if (cleaned.length === 10) {
-      // US format: (XXX) XXX-XXXX
-      return cleaned.match(/^\d{10}$/) !== null
-    } else if (cleaned.length >= 7 && cleaned.length <= 15) {
-      // International format
-      return cleaned.match(/^\d{7,15}$/) !== null
-    }
-    return false
-  }
-
-  const formatPhone = (phone: string) => {
-    const cleaned = phone.replace(/\D/g, '')
-    if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
-    }
-    return phone
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const validateForm = () => {
-    if (!formData.name.trim()) {
-      setError('Full name is required')
+    if (!formData.name || !formData.email || !formData.password || !formData.role) {
+      alert('Please fill in all required fields')
       return false
     }
-    
-    if (!formData.email.trim()) {
-      setError('Email is required')
+
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match')
       return false
     }
-    
+
+    if (formData.password.length < 8) {
+      alert('Password must be at least 8 characters long')
+      return false
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address')
+      alert('Please enter a valid email address')
       return false
     }
-    
-    if (!formData.phone.trim()) {
-      setError('Phone number is required')
-      return false
-    }
-    
-    if (!validatePhone(formData.phone)) {
-      setError('Please enter a valid phone number (10 digits for US, 7-15 digits for international)')
-      return false
-    }
-    
-    if (!formData.role) {
-      setError('Please select your role')
-      return false
-    }
-    
-    if (!formData.password) {
-      setError('Password is required')
-      return false
-    }
-    
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
-      return false
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return false
-    }
-    
-    if ((formData.role === 'coach' || formData.role === 'player') && !formData.team.trim()) {
-      setError('Team name is required for coaches and players')
-      return false
-    }
-    
-    if (formData.role === 'player' && !formData.position.trim()) {
-      setError('Position is required for players')
-      return false
-    }
-    
-    return true
-  }
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    // Allow only numbers, spaces, parentheses, and dashes
-    const cleaned = value.replace(/[^\d\s\(\)\-]/g, '')
-    setFormData({...formData, phone: cleaned})
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateForm()) return
+
     setLoading(true)
-    setError('')
-
-    if (!validateForm()) {
-      setLoading(false)
-      return
-    }
-
+    
     try {
-      // Format phone number before submitting
-      const formattedData = {
-        ...formData,
-        phone: formatPhone(formData.phone)
-      }
-      
-      await register(formattedData as any)
-      
+      await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role as 'student' | 'coach' | 'parent' | 'supporter',
+        team: formData.team,
+        position: formData.position,
+        phone: formData.phone
+      })
+
       // Send verification email
-      await sendEmailVerification(formData.email, formData.name)
+      const verificationCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+      await sendEmailVerification(formData.email, verificationCode)
+      
       setVerificationSent(true)
       
-      // Auto redirect after showing verification message
+      // Redirect after a delay
       setTimeout(() => {
-        navigate('/')
+        navigate('/login')
       }, 3000)
-    } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.')
+      
+    } catch (error) {
+      alert('Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -152,33 +96,33 @@ export function RegisterPage() {
 
   if (verificationSent) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-green-600 text-2xl">✓</span>
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Mail className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Account Created!</h1>
-          <p className="text-gray-600 mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h1>
+          <p className="text-gray-600 mb-6">
             We've sent a verification email to <strong>{formData.email}</strong>. 
-            Please check your inbox and click the verification link to activate your account.
+            Please check your inbox and follow the instructions to verify your account.
           </p>
-          <p className="text-sm text-gray-500">
-            Redirecting you to the dashboard in a few seconds...
-          </p>
+          <div className="text-sm text-gray-500">
+            Redirecting to login page in a few seconds...
+          </div>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-xl">B</span>
+            <span className="text-white font-bold text-lg">B</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Join Believe Fundraising Group</h1>
-          <p className="text-gray-600 mt-2">Create your account to support sports teams</p>
+          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
+          <p className="text-gray-600">Join Believe Fundraising Group</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -188,7 +132,7 @@ export function RegisterPage() {
               id="name"
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Enter your full name"
               required
             />
@@ -200,105 +144,127 @@ export function RegisterPage() {
               id="email"
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Enter your email"
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="phone">Phone Number *</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handlePhoneChange}
-              placeholder="(555) 123-4567 or +1234567890"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              US: 10 digits (555) 123-4567 | International: 7-15 digits +1234567890
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor="role">I am a *</Label>
-            <Select value={formData.role} onValueChange={(value: 'coach' | 'player' | 'supporter') => setFormData({...formData, role: value})}>
+            <Label htmlFor="role">Role *</Label>
+            <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select your role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="supporter">Team Supporter</SelectItem>
-                <SelectItem value="player">Team Player</SelectItem>
-                <SelectItem value="coach">Coach/Staff</SelectItem>
+                <SelectItem value="student">Student Athlete</SelectItem>
+                <SelectItem value="coach">Coach</SelectItem>
+                <SelectItem value="parent">Parent</SelectItem>
+                <SelectItem value="supporter">Community Supporter</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {(formData.role === 'player' || formData.role === 'coach') && (
-            <>
-              <div>
-                <Label htmlFor="team">Team Name *</Label>
-                <Input
-                  id="team"
-                  type="text"
-                  value={formData.team}
-                  onChange={(e) => setFormData({...formData, team: e.target.value})}
-                  placeholder="Enter your team name"
-                  required
-                />
-              </div>
-              {formData.role === 'player' && (
-                <div>
-                  <Label htmlFor="position">Position *</Label>
-                  <Input
-                    id="position"
-                    type="text"
-                    value={formData.position}
-                    onChange={(e) => setFormData({...formData, position: e.target.value})}
-                    placeholder="Enter your position"
-                    required
-                  />
-                </div>
-              )}
-            </>
+          {(formData.role === 'student' || formData.role === 'coach') && (
+            <div>
+              <Label htmlFor="team">Team Name</Label>
+              <Input
+                id="team"
+                type="text"
+                value={formData.team}
+                onChange={(e) => handleInputChange('team', e.target.value)}
+                placeholder="Enter your team name"
+              />
+            </div>
+          )}
+
+          {formData.role === 'student' && (
+            <div>
+              <Label htmlFor="position">Position</Label>
+              <Input
+                id="position"
+                type="text"
+                value={formData.position}
+                onChange={(e) => handleInputChange('position', e.target.value)}
+                placeholder="Your position on the team"
+              />
+            </div>
           )}
 
           <div>
-            <Label htmlFor="password">Password *</Label>
+            <Label htmlFor="phone">Phone Number</Label>
             <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              placeholder="Create a password (min 6 characters)"
-              required
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="(555) 123-4567"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="password">Password *</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                placeholder="Create a password"
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
 
           <div>
             <Label htmlFor="confirmPassword">Confirm Password *</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-              placeholder="Confirm your password"
-              required
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                placeholder="Confirm your password"
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
 
-          {error && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">{error}</div>
-          )}
-
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Creating Account...
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Create Account
+              </>
+            )}
           </Button>
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-gray-600">
+          <p className="text-sm text-gray-600">
             Already have an account?{' '}
             <Link to="/login" className="text-blue-600 hover:underline">
               Sign in

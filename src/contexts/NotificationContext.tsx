@@ -23,6 +23,10 @@ interface NotificationContextType {
   getUserNotifications: (userId: string) => Notification[]
   sendTeamJoinNotification: (email: string, phone: string, teamName: string) => Promise<void>
   sendEmailNotification: (email: string, subject: string, message: string) => Promise<void>
+  sendEmailVerification: (email: string, verificationCode: string) => Promise<void>
+  sendSMSNotification: (phone: string, message: string) => Promise<void>
+  sendDonationConfirmation: (email: string, amount: number, teamName: string, donorName: string) => Promise<void>
+  subscribeToUpdates: (email: string, teamName: string) => Promise<void>
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
@@ -160,6 +164,72 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     console.log(`Email sent to ${email}: ${subject}`)
   }
 
+  const sendEmailVerification = async (email: string, verificationCode: string) => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 800))
+    console.log(`Verification email sent to ${email} with code: ${verificationCode}`)
+    
+    if (user) {
+      addNotification({
+        userId: user.id,
+        type: 'account',
+        title: 'Email Verification Sent',
+        message: `We've sent a verification code to ${email}. Please check your inbox and enter the code to verify your account.`,
+        read: false
+      })
+    }
+  }
+
+  const sendSMSNotification = async (phone: string, message: string) => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 600))
+    console.log(`SMS sent to ${phone}: ${message}`)
+    
+    if (user) {
+      addNotification({
+        userId: user.id,
+        type: 'account',
+        title: 'SMS Verification Sent',
+        message: `We've sent a verification code to ${phone}. Please enter the code to complete two-factor authentication setup.`,
+        read: false
+      })
+    }
+  }
+
+  const sendDonationConfirmation = async (email: string, amount: number, teamName: string, donorName: string) => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    console.log(`Donation confirmation sent to ${email} for $${amount} to ${teamName}`)
+    
+    if (user) {
+      addNotification({
+        userId: user.id,
+        type: 'donation',
+        title: 'Donation Confirmed',
+        message: `Your $${amount} donation to ${teamName} has been processed successfully. Thank you for your support!`,
+        read: false,
+        relatedId: 'eagles-basketball-2024'
+      })
+    }
+  }
+
+  const subscribeToUpdates = async (email: string, teamName: string) => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
+    console.log(`${email} subscribed to updates for ${teamName}`)
+    
+    if (user) {
+      addNotification({
+        userId: user.id,
+        type: 'team_update',
+        title: 'Subscribed to Updates',
+        message: `You've successfully subscribed to updates for ${teamName}. You'll receive notifications about their progress and milestones.`,
+        read: false,
+        relatedId: 'eagles-basketball-2024'
+      })
+    }
+  }
+
   return (
     <NotificationContext.Provider value={{
       notifications,
@@ -170,7 +240,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       markAllAsRead,
       getUserNotifications,
       sendTeamJoinNotification,
-      sendEmailNotification
+      sendEmailNotification,
+      sendEmailVerification,
+      sendSMSNotification,
+      sendDonationConfirmation,
+      subscribeToUpdates
     }}>
       {children}
     </NotificationContext.Provider>
