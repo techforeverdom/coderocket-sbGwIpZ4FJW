@@ -32,7 +32,7 @@ interface CampaignContextType {
 
 const CampaignContext = createContext<CampaignContextType | undefined>(undefined)
 
-const STORAGE_KEY = 'teamfundraising_campaigns'
+const STORAGE_KEY = 'believefundraising_campaigns'
 
 export function CampaignProvider({ children }: { children: ReactNode }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -41,69 +41,59 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const savedCampaigns = localStorage.getItem(STORAGE_KEY)
     if (savedCampaigns) {
-      setCampaigns(JSON.parse(savedCampaigns))
+      try {
+        setCampaigns(JSON.parse(savedCampaigns))
+      } catch (error) {
+        console.error('Error parsing saved campaigns:', error)
+        initializeDefaultCampaigns()
+      }
     } else {
-      // Initialize with default campaigns if none exist
-      const defaultCampaigns: Campaign[] = [
-        {
-          id: 'eagles-basketball-2024',
-          title: 'Help Eagles Basketball Reach State Championships',
-          team: 'Eagles Basketball Team',
-          school: 'Lincoln High School',
-          sport: 'Basketball',
-          raised: 18750,
-          goal: 35000,
-          supporters: 247,
-          status: 'active',
-          image: 'https://picsum.photos/id/431/800/400',
-          description: 'Supporting our team\'s journey to compete at the highest level',
-          story: 'The Lincoln High Eagles basketball team has been working tirelessly to reach the state championships. We need your support to cover travel expenses, equipment upgrades, and tournament fees.',
-          created: '2024-01-15',
-          deadline: '2024-03-15',
-          coachName: 'Coach Johnson',
-          coachEmail: 'coach.johnson@lincolnhigh.edu'
-        },
-        {
-          id: 'warriors-football-2024',
-          title: 'Warriors Football Championship Fund',
-          team: 'Warriors Football',
-          school: 'Central High School',
-          sport: 'Football',
-          raised: 52750,
-          goal: 60000,
-          supporters: 428,
-          status: 'active',
-          image: 'https://picsum.photos/id/342/800/400',
-          description: 'Equipment and travel fund for championship season',
-          story: 'Our Warriors football team is having an incredible season and needs support for the championship playoffs.',
-          created: '2024-01-10',
-          deadline: '2024-02-28',
-          coachName: 'Coach Martinez',
-          coachEmail: 'coach.martinez@centralhigh.edu'
-        },
-        {
-          id: 'lions-soccer-2024',
-          title: 'Lions Soccer Tournament Fund',
-          team: 'Westside Lions',
-          school: 'Westside Academy',
-          sport: 'Soccer',
-          raised: 38200,
-          goal: 45000,
-          supporters: 312,
-          status: 'pending',
-          image: 'https://picsum.photos/id/244/800/400',
-          description: 'Supporting our soccer team\'s tournament participation',
-          story: 'The Westside Lions soccer team has qualified for the regional tournament and needs funding for travel and equipment.',
-          created: '2024-01-20',
-          deadline: '2024-04-01',
-          coachName: 'Coach Thompson',
-          coachEmail: 'coach.thompson@westsideacademy.edu'
-        }
-      ]
-      setCampaigns(defaultCampaigns)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultCampaigns))
+      initializeDefaultCampaigns()
     }
   }, [])
+
+  const initializeDefaultCampaigns = () => {
+    const defaultCampaigns: Campaign[] = [
+      {
+        id: 'eagles-basketball-2024',
+        title: 'Help Eagles Basketball Reach State Championships',
+        team: 'Eagles Basketball Team',
+        school: 'Lincoln High School',
+        sport: 'Basketball',
+        raised: 18750,
+        goal: 35000,
+        supporters: 247,
+        status: 'active',
+        image: 'https://picsum.photos/id/431/800/400',
+        description: 'Supporting our team\'s journey to compete at the highest level',
+        story: 'The Lincoln High Eagles basketball team has been working tirelessly to reach the state championships. We need your support to cover travel expenses, equipment upgrades, and tournament fees.',
+        created: '2024-01-15',
+        deadline: '2024-03-15',
+        coachName: 'Coach Johnson',
+        coachEmail: 'coach.johnson@lincolnhigh.edu'
+      },
+      {
+        id: 'warriors-football-2024',
+        title: 'Warriors Football Championship Fund',
+        team: 'Warriors Football',
+        school: 'Central High School',
+        sport: 'Football',
+        raised: 52750,
+        goal: 60000,
+        supporters: 428,
+        status: 'active',
+        image: 'https://picsum.photos/id/342/800/400',
+        description: 'Equipment and travel fund for championship season',
+        story: 'Our Warriors football team is having an incredible season and needs support for the championship playoffs.',
+        created: '2024-01-10',
+        deadline: '2024-02-28',
+        coachName: 'Coach Martinez',
+        coachEmail: 'coach.martinez@centralhigh.edu'
+      }
+    ]
+    setCampaigns(defaultCampaigns)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultCampaigns))
+  }
 
   // Save campaigns to localStorage whenever campaigns change
   useEffect(() => {
@@ -140,7 +130,12 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteCampaign = (campaignId: string) => {
-    setCampaigns(prev => prev.filter(campaign => campaign.id !== campaignId))
+    setCampaigns(prev => {
+      const filtered = prev.filter(campaign => campaign.id !== campaignId)
+      // Force update localStorage immediately
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
+      return filtered
+    })
   }
 
   const updateCampaignStatus = (campaignId: string, status: Campaign['status']) => {

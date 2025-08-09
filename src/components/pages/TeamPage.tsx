@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Header } from '../Header'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import { Progress } from '../ui/progress'
+import { Input } from '../ui/input'
+import { Textarea } from '../ui/textarea'
+import { Label } from '../ui/label'
 import { Share2, Heart, Flag, Trophy, MapPin, Calendar, Users } from 'lucide-react'
 import { useCampaigns } from '../../contexts/CampaignContext'
 import { useNotifications } from '../../contexts/NotificationContext'
@@ -13,8 +17,13 @@ import { TeamDonationSection } from '../TeamDonationSection'
 export function TeamPage() {
   const { teamId } = useParams<{ teamId: string }>()
   const { getCampaignById } = useCampaigns()
-  const { sendTeamJoinNotification } = useNotifications()
-  const { user } = useAuth()
+  const { sendTeamJoinNotification, sendEmailNotification } = useNotifications()
+  const { user, getAllUsers } = useAuth()
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportData, setReportData] = useState({
+    reason: '',
+    description: ''
+  })
   
   const campaign = getCampaignById(teamId || '')
 
@@ -46,15 +55,67 @@ export function TeamPage() {
 
   const handleShare = () => {
     const url = window.location.href
+    const text = `Support ${campaign.team} - ${campaign.description}`
+    
     if (navigator.share) {
       navigator.share({
         title: campaign.title,
-        text: `Support ${campaign.team} - ${campaign.description}`,
+        text: text,
         url: url
-      })
+      }).catch(console.error)
     } else {
-      navigator.clipboard.writeText(url)
-      alert('Team link copied to clipboard!')
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Team link copied to clipboard!')
+      }).catch(() => {
+        alert(`Share this team: ${url}`)
+      })
+    }
+  }
+
+  const handleReport = async () => {
+    if (!reportData.reason || !reportData.description) {
+      alert('Please fill in all fields')
+      return
+    }
+
+    try {
+      // Get all admin users
+      const allUsers = getAllUsers()
+      const adminUsers = allUsers.filter(u => u.role === 'admin')
+
+      // Send email to all admins
+      const subject = `Campaign Report: ${campaign.title}`
+      const message = `
+A user has reported an issue with a campaign:
+
+CAMPAIGN DETAILS:
+- Title: ${campaign.title}
+- Team: ${campaign.team}
+- School: ${campaign.school}
+- Campaign ID: ${campaign.id}
+- URL: ${window.location.href}
+
+REPORT DETAILS:
+- Reported by: ${user?.name || 'Anonymous'} (${user?.email || 'No email'})
+- Reason: ${reportData.reason}
+- Description: ${reportData.description}
+- Date: ${new Date().toLocaleString()}
+
+Please review this campaign and take appropriate action if necessary.
+
+Believe Fundraising Group Admin System
+      `
+
+      // Send to all admins
+      for (const admin of adminUsers) {
+        await sendEmailNotification(admin.email, subject, message)
+      }
+
+      alert('Report submitted successfully. Our team will review it shortly.')
+      setShowReportModal(false)
+      setReportData({ reason: '', description: '' })
+    } catch (error) {
+      alert('Failed to submit report. Please try again.')
     }
   }
 
@@ -96,7 +157,7 @@ export function TeamPage() {
                       Follow Team
                     </Button>
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => setShowReportModal(true)}>
                     <Flag className="w-4 h-4 mr-2" />
                     Report
                   </Button>
@@ -204,6 +265,54 @@ export function TeamPage() {
             <TeamDonationSection campaign={campaign} />
           </div>
         </div>
+
+        {/* Report Modal */}
+        {showReportModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Report Campaign</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="reason">Reason for Report</Label>
+                  <select
+                    id="reason"
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    value={reportData.reason}
+                    onChange={(e) => setReportData({...reportData, reason: e.target.value})}
+                  >
+                    <option value="">Select a reason</option>
+                    <option value="inappropriate_content">Inappropriate Content</option>
+                    <option value="misleading_information">Misleading Information</option>
+                    <option value="spam">Spam</option>
+                    <option value="fraud">Suspected Fraud</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Please provide details about the issue..."
+                    value={reportData.description}
+                    onChange={(e) => setReportData({...reportData, description: e.target.value})}
+                    rows={4}
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-4 mt-6">
+                <Button variant="outline" onClick={() => setShowReportModal(false)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button onClick={handleReport} className="flex-1">
+                  Submit Report
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
       </main>
     </div>
   )

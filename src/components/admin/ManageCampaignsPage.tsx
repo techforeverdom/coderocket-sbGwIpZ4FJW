@@ -30,14 +30,22 @@ export function ManageCampaignsPage() {
   }
 
   const handleStatusChange = (campaignId: string, newStatus: 'active' | 'pending' | 'paused' | 'completed') => {
-    updateCampaignStatus(campaignId, newStatus)
-    alert(`Campaign status updated to ${newStatus}`)
+    try {
+      updateCampaignStatus(campaignId, newStatus)
+      alert(`Campaign status updated to ${newStatus}`)
+    } catch (error) {
+      alert('Failed to update campaign status')
+    }
   }
 
   const handleDelete = (campaignId: string, campaignTitle: string) => {
     if (confirm(`Are you sure you want to delete "${campaignTitle}"? This action cannot be undone.`)) {
-      deleteCampaign(campaignId)
-      alert('Campaign deleted successfully')
+      try {
+        deleteCampaign(campaignId)
+        alert('Campaign deleted successfully')
+      } catch (error) {
+        alert('Failed to delete campaign')
+      }
     }
   }
 
