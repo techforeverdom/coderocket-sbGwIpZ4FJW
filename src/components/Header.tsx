@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from './ui/button'
 import { Avatar } from './ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
-import { Bell, Search, Menu, Plus, LogOut, User, Settings, Shield, Users } from 'lucide-react'
+import { Bell, Search, Menu, Plus, LogOut, User, Settings, Shield, Users, FileText, ClipboardList } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export function Header() {
@@ -31,7 +31,7 @@ export function Header() {
             <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium">Dashboard</Link>
             <Link to="/campaigns" className="text-gray-700 hover:text-blue-600 font-medium">Campaigns</Link>
             <Link to="/teams" className="text-gray-700 hover:text-blue-600 font-medium">Teams</Link>
-            <Link to="/resources" className="text-gray-700 hover:text-blue-600 font-medium">Resources</Link>
+            <Link to="/request-campaign" className="text-gray-700 hover:text-blue-600 font-medium">Request Campaign</Link>
             {isAdmin && (
               <Link to="/admin" className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1">
                 <Shield className="w-4 h-4" />
@@ -76,6 +76,12 @@ export function Header() {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/request-campaign" className="flex items-center">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Request Campaign
+                  </Link>
+                </DropdownMenuItem>
                 {isAdmin && (
                   <>
                     <DropdownMenuItem asChild>
@@ -88,6 +94,12 @@ export function Header() {
                       <Link to="/admin/manage-users" className="flex items-center">
                         <Users className="mr-2 h-4 w-4" />
                         Manage Users
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/review-requests" className="flex items-center">
+                        <ClipboardList className="mr-2 h-4 w-4" />
+                        Review Requests
                       </Link>
                     </DropdownMenuItem>
                   </>
