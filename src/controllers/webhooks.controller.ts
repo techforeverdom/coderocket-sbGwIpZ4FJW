@@ -10,7 +10,7 @@ export class WebhooksController {
    * POST /webhooks/stripe
    * Handle Stripe webhook events
    */
-  static async handleStripeWebhook(req: Request, res: Response) {
+  static async handleStripeWebhook(req: Request, res: Response): Promise<Response> {
     const signature = req.headers['stripe-signature'] as string;
     
     if (!signature) {
@@ -41,7 +41,7 @@ export class WebhooksController {
       // Mark webhook as processed
       await WebhookService.markAsProcessed(event.id);
 
-      res.json({ received: true });
+      return res.json({ received: true });
     } catch (error) {
       console.error('Webhook error:', error);
       
@@ -58,7 +58,7 @@ export class WebhooksController {
         console.error('Failed to log webhook error:', logError);
       }
 
-      res.status(400).json({
+      return res.status(400).json({
         error: 'Webhook processing failed',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -68,7 +68,7 @@ export class WebhooksController {
   /**
    * Process different types of Stripe events
    */
-  private static async processStripeEvent(event: Stripe.Event) {
+  private static async processStripeEvent(event: Stripe.Event): Promise<void> {
     console.log(`Processing Stripe event: ${event.type}`);
 
     switch (event.type) {
@@ -106,7 +106,7 @@ export class WebhooksController {
   /**
    * Handle successful payment intent
    */
-  private static async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  private static async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
     try {
       const donation = await DonationService.findByStripePaymentIntentId(paymentIntent.id);
       if (!donation) {
@@ -148,7 +148,7 @@ export class WebhooksController {
   /**
    * Handle failed payment intent
    */
-  private static async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+  private static async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent): Promise<void> {
     try {
       const donation = await DonationService.findByStripePaymentIntentId(paymentIntent.id);
       if (!donation) {
@@ -169,7 +169,7 @@ export class WebhooksController {
   /**
    * Handle canceled payment intent
    */
-  private static async handlePaymentIntentCanceled(paymentIntent: Stripe.PaymentIntent) {
+  private static async handlePaymentIntentCanceled(paymentIntent: Stripe.PaymentIntent): Promise<void> {
     try {
       const donation = await DonationService.findByStripePaymentIntentId(paymentIntent.id);
       if (!donation) {
@@ -190,7 +190,7 @@ export class WebhooksController {
   /**
    * Handle charge disputes
    */
-  private static async handleChargeDispute(dispute: Stripe.Dispute) {
+  private static async handleChargeDispute(dispute: Stripe.Dispute): Promise<void> {
     try {
       console.log(`Charge dispute created: ${dispute.id} for charge: ${dispute.charge}`);
       
