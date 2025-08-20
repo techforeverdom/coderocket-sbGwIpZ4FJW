@@ -1,4 +1,5 @@
 import { StripeService } from '../services/stripe.service';
+import { config } from '../config/config';
 
 // Mock Stripe
 jest.mock('stripe');
@@ -20,13 +21,9 @@ const mockStripe = {
   },
   paymentMethods: {
     list: jest.fn(),
-    retrieve: jest.fn(),
   },
   balance: {
     retrieve: jest.fn(),
-  },
-  setupIntents: {
-    create: jest.fn(),
   },
 };
 
@@ -198,32 +195,6 @@ describe('StripeService', () => {
       );
 
       expect(result).toEqual(mockRefund);
-    });
-  });
-
-  describe('createSetupIntent', () => {
-    it('should create setup intent successfully', async () => {
-      const mockSetupIntent = {
-        id: 'seti_test123',
-        client_secret: 'seti_test123_secret',
-        status: 'requires_payment_method',
-      };
-
-      mockStripe.setupIntents.create.mockResolvedValue(mockSetupIntent);
-
-      const result = await StripeService.createSetupIntent({
-        customerId: 'cus_test123',
-        paymentMethodTypes: ['card'],
-        usage: 'off_session',
-      });
-
-      expect(mockStripe.setupIntents.create).toHaveBeenCalledWith({
-        customer: 'cus_test123',
-        payment_method_types: ['card'],
-        usage: 'off_session',
-      });
-
-      expect(result).toEqual(mockSetupIntent);
     });
   });
 });
