@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { config } from '../config/config';
 
 export interface AuthRequest extends Request {
@@ -137,13 +137,14 @@ export function generateToken(payload: {
   organizationId: string;
 }): string {
   try {
-    return jwt.sign(
-      payload, 
-      config.jwt.secret, 
-      { 
-        expiresIn: config.jwt.expiresIn 
-      }
-    );
+    const secret = config.jwt.secret;
+    const expiresIn = config.jwt.expiresIn;
+    
+    if (!secret) {
+      throw new Error('JWT secret is not configured');
+    }
+
+    return jwt.sign(payload, secret, { expiresIn });
   } catch (error) {
     console.error('Error generating token:', error);
     throw new Error('Failed to generate authentication token');
@@ -152,7 +153,13 @@ export function generateToken(payload: {
 
 export function verifyToken(token: string): any {
   try {
-    return jwt.verify(token, config.jwt.secret);
+    const secret = config.jwt.secret;
+    
+    if (!secret) {
+      throw new Error('JWT secret is not configured');
+    }
+
+    return jwt.verify(token, secret);
   } catch (error) {
     throw new Error('Invalid or expired token');
   }
@@ -160,7 +167,13 @@ export function verifyToken(token: string): any {
 
 export function refreshToken(token: string): string {
   try {
-    const decoded = jwt.verify(token, config.jwt.secret, { ignoreExpiration: true }) as any;
+    const secret = config.jwt.secret;
+    
+    if (!secret) {
+      throw new Error('JWT secret is not configured');
+    }
+
+    const decoded = jwt.verify(token, secret, { ignoreExpiration: true }) as any;
     
     // Remove the original expiration and issued at claims
     const { exp, iat, ...payload } = decoded;
@@ -213,7 +226,14 @@ export function createAuthMiddleware(options: {
     }
 
     try {
-      const decoded = jwt.verify(token, config.jwt.secret) as any;
+      const secret = config.jwt.secret;
+      
+      if (!secret) {
+        res.status(500).json({ error: 'JWT configuration error' });
+        return;
+      }
+
+      const decoded = jwt.verify(token, secret) as any;
       req.user = decoded;
 
       // Check roles if specified
