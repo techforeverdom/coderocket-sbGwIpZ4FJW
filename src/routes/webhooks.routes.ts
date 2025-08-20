@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import { WebhooksController } from '../controllers/webhooks.controller';
-import { rawBodyMiddleware } from '../middleware/rawBody.middleware';
+import express from 'express';
 
 const router = Router();
 
-// Stripe webhook endpoint (requires raw body)
-router.post('/stripe', rawBodyMiddleware, WebhooksController.handleStripeWebhook);
+// Stripe webhooks need raw body, so we use raw middleware
+router.use('/stripe', express.raw({ type: 'application/json' }));
+
+// Webhook endpoints
+router.post('/stripe', WebhooksController.handleStripeWebhook);
 
 export { router as webhooksRouter };

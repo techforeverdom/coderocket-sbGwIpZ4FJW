@@ -136,9 +136,18 @@ export function generateToken(payload: {
   role: string;
   organizationId: string;
 }): string {
-  return jwt.sign(payload, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
-  });
+  try {
+    return jwt.sign(
+      payload, 
+      config.jwt.secret, 
+      { 
+        expiresIn: config.jwt.expiresIn 
+      }
+    );
+  } catch (error) {
+    console.error('Error generating token:', error);
+    throw new Error('Failed to generate authentication token');
+  }
 }
 
 export function verifyToken(token: string): any {
@@ -154,15 +163,14 @@ export function refreshToken(token: string): string {
     const decoded = jwt.verify(token, config.jwt.secret, { ignoreExpiration: true }) as any;
     
     // Remove the original expiration and issued at claims
-    delete decoded.exp;
-    delete decoded.iat;
+    const { exp, iat, ...payload } = decoded;
     
     // Generate new token with same payload
     return generateToken({
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-      organizationId: decoded.organizationId,
+      id: payload.id,
+      email: payload.email,
+      role: payload.role,
+      organizationId: payload.organizationId,
     });
   } catch (error) {
     throw new Error('Invalid token for refresh');
@@ -209,19 +217,19 @@ export function createAuthMiddleware(options: {
       req.user = decoded;
 
       // Check roles if specified
-      if (roles && !roles.includes(req.user.role)) {
+      if (roles && req.user && !roles.includes(req.user.role)) {
         res.status(403).json({ error: 'Insufficient permissions' });
         return;
       }
 
       // Check organization membership if required
-      if (reqOrg && !req.user.organizationId) {
+      if (reqOrg && req.user && !req.user.organizationId) {
         res.status(403).json({ error: 'Organization membership required' });
         return;
       }
 
       // Check same organization if required
-      if (reqSameOrg) {
+      if (reqSameOrg && req.user) {
         const { organizationId } = req.params;
         if (!organizationId) {
           res.status(400).json({ error: 'Organization ID required in request' });
@@ -243,5 +251,87 @@ export function createAuthMiddleware(options: {
         return;
       }
     }
+  };
+}
+
+// Utility function to decode token without verification (for debugging)
+export function decodeToken(token: string): any {
+  try {
+    return jwt.decode(token);
+  } catch (error) {
+    return null;
+  }
+}
+
+// Check if token is expired
+export function isTokenExpired(token: string): boolean {
+  try {
+    const decoded = jwt.decode(token) as any;
+    if (!decoded || !decoded.exp) {
+      return true;
+    }
+    
+    const currentTime = Math.floor(Date.now() / 1000);
+    return decoded.exp < currentTime;
+  } catch (error) {
+    return true;
+  }
+}
+
+// Get token expiration time
+export function getTokenExpiration(token: string): Date | null {
+  try {
+    const decoded = jwt.decode(token) as any;
+    if (!decoded || !decoded.exp) {
+      return null;
+    }
+    
+    return new Date(decoded.exp * 1000);
+  } catch (error) {
+    return null;
+  }
+}
+
+// Validate token format
+export function isValidTokenFormat(token: string): boolean {
+  if (!token || typeof token !== 'string') {
+    return false;
+  }
+  
+  // JWT tokens have 3 parts separated by dots
+  const parts = token.split('.');
+  return parts.length === 3;
+}
+
+// Create API key authentication middleware (for service-to-service communication)
+export function authenticateApiKey(req: Request, res: Response, next: NextFunction): void {
+  const apiKey = req.headers['x-api-key'] as string;
+  
+  if (!apiKey) {
+    res.status(401).json({ error: 'API key required' });
+    return;
+  }
+  
+  // In a real implementation, you would validate the API key against a database
+  // For now, we'll use a simple environment variable check
+  const validApiKey = process.env.API_KEY;
+  
+  if (!validApiKey || apiKey !== validApiKey) {
+    res.status(403).json({ error: 'Invalid API key' });
+    return;
+  }
+  
+  next();
+}
+
+// Rate limiting helper (to be used with express-rate-limit)
+export function createRateLimitKeyGenerator() {
+  return (req: AuthRequest): string => {
+    // Use user ID if authenticated, otherwise use IP
+    if (req.user && req.user.id) {
+      return `user:${req.user.id}`;
+    }
+    
+    return `ip:${req.ip || req.connection.remoteAddress || 'unknown'}`;
   };
 }
