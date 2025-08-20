@@ -107,17 +107,23 @@ export class StripeService {
     }
 
     try {
+      const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
+        amount: amountCents,
+        currency: STRIPE_CONFIG.currency,
+        payment_method_types: STRIPE_CONFIG.paymentMethodTypes as Stripe.PaymentIntentCreateParams.PaymentMethodType[],
+        capture_method: STRIPE_CONFIG.captureMethod as Stripe.PaymentIntentCreateParams.CaptureMethod,
+        confirmation_method: STRIPE_CONFIG.confirmationMethod as Stripe.PaymentIntentCreateParams.ConfirmationMethod,
+        metadata,
+        description: `Donation to campaign ${campaignId}`,
+      };
+
+      // Add receipt email if provided
+      if (donorEmail) {
+        paymentIntentParams.receipt_email = donorEmail;
+      }
+
       const paymentIntent = await stripe.paymentIntents.create(
-        {
-          amount: amountCents,
-          currency: STRIPE_CONFIG.currency,
-          payment_method_types: STRIPE_CONFIG.paymentMethodTypes,
-          capture_method: STRIPE_CONFIG.captureMethod,
-          confirmation_method: STRIPE_CONFIG.confirmationMethod,
-          metadata,
-          description: `Donation to campaign ${campaignId}`,
-          receipt_email: donorEmail,
-        },
+        paymentIntentParams,
         {
           idempotencyKey,
         }
@@ -255,6 +261,63 @@ export class StripeService {
     } catch (error) {
       console.error('Error listing payment methods:', error);
       throw new Error('Failed to list payment methods');
+    }
+  }
+
+  /**
+   * Update a PaymentIntent
+   */
+  static async updatePaymentIntent(
+    paymentIntentId: string,
+    params: Stripe.PaymentIntentUpdateParams
+  ): Promise<Stripe.PaymentIntent> {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured');
+    }
+
+    const stripe = getStripe();
+    
+    try {
+      return await stripe.paymentIntents.update(paymentIntentId, params);
+    } catch (error) {
+      console.error('Error updating PaymentIntent:', error);
+      throw new Error('Failed to update payment intent');
+    }
+  }
+
+  /**
+   * Cancel a PaymentIntent
+   */
+  static async cancelPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured');
+    }
+
+    const stripe = getStripe();
+    
+    try {
+      return await stripe.paymentIntents.cancel(paymentIntentId);
+    } catch (error) {
+      console.error('Error canceling PaymentIntent:', error);
+      throw new Error('Failed to cancel payment intent');
+    }
+  }
+
+  /**
+   * Get balance information
+   */
+  static async getBalance(): Promise<Stripe.Balance> {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured');
+    }
+
+    const stripe = getStripe();
+    
+    try {
+      return await stripe.balance.retrieve();
+    } catch (error) {
+      console.error('Error retrieving balance:', error);
+      throw new Error('Failed to retrieve balance');
     }
   }
 }
