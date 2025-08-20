@@ -25,6 +25,14 @@ export class DonationsController {
    */
   static async createCheckout(req: Request, res: Response) {
     try {
+      // Check if Stripe is configured
+      if (!StripeService.isConfigured()) {
+        return res.status(503).json({
+          error: 'Payment processing unavailable',
+          message: 'Stripe is not configured. Please contact support.',
+        });
+      }
+
       const validatedData = createCheckoutSchema.parse(req.body);
       const { amountCents, campaignId, participantId, donorEmail, donorName, message } = validatedData;
 
@@ -121,6 +129,13 @@ export class DonationsController {
    */
   static async confirmPayment(req: Request, res: Response) {
     try {
+      if (!StripeService.isConfigured()) {
+        return res.status(503).json({
+          error: 'Payment processing unavailable',
+          message: 'Stripe is not configured.',
+        });
+      }
+
       const { paymentIntentId } = confirmPaymentSchema.parse(req.body);
 
       // Retrieve PaymentIntent from Stripe
@@ -208,6 +223,13 @@ export class DonationsController {
    */
   static async createRefund(req: Request, res: Response) {
     try {
+      if (!StripeService.isConfigured()) {
+        return res.status(503).json({
+          error: 'Payment processing unavailable',
+          message: 'Stripe is not configured.',
+        });
+      }
+
       const { id } = req.params;
       const { amountCents, reason } = req.body;
 

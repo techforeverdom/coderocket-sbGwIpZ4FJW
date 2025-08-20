@@ -1,4 +1,4 @@
-import { stripe, STRIPE_CONFIG } from '../config/stripe';
+import { getStripe, isStripeConfigured, STRIPE_CONFIG } from '../config/stripe';
 import { config } from '../config/config';
 import { v4 as uuidv4 } from 'uuid';
 import Stripe from 'stripe';
@@ -22,6 +22,13 @@ export interface FeeCalculation {
 }
 
 export class StripeService {
+  /**
+   * Check if Stripe is configured
+   */
+  static isConfigured(): boolean {
+    return isStripeConfigured();
+  }
+
   /**
    * Calculate fees for a donation amount
    */
@@ -52,6 +59,11 @@ export class StripeService {
    * Create a PaymentIntent for donation checkout
    */
   static async createPaymentIntent(params: CreatePaymentIntentParams): Promise<Stripe.PaymentIntent> {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
+    }
+
+    const stripe = getStripe();
     const {
       amountCents,
       campaignId,
@@ -122,6 +134,12 @@ export class StripeService {
    * Retrieve a PaymentIntent by ID
    */
   static async getPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured');
+    }
+
+    const stripe = getStripe();
+    
     try {
       return await stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (error) {
@@ -139,6 +157,12 @@ export class StripeService {
     reason?: Stripe.RefundCreateParams.Reason,
     idempotencyKey?: string
   ): Promise<Stripe.Refund> {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured');
+    }
+
+    const stripe = getStripe();
+    
     try {
       const refundParams: Stripe.RefundCreateParams = {
         payment_intent: paymentIntentId,
@@ -166,6 +190,16 @@ export class StripeService {
     signature: string,
     secret: string = config.stripe.webhookSecret
   ): Stripe.Event {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured');
+    }
+
+    if (!secret) {
+      throw new Error('Webhook secret is not configured');
+    }
+
+    const stripe = getStripe();
+    
     try {
       return stripe.webhooks.constructEvent(payload, signature, secret);
     } catch (error) {
@@ -183,6 +217,12 @@ export class StripeService {
     phone?: string;
     metadata?: Record<string, string>;
   }): Promise<Stripe.Customer> {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured');
+    }
+
+    const stripe = getStripe();
+    
     try {
       return await stripe.customers.create({
         email: params.email,
@@ -200,6 +240,12 @@ export class StripeService {
    * List payment methods for a customer
    */
   static async listPaymentMethods(customerId: string): Promise<Stripe.PaymentMethod[]> {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured');
+    }
+
+    const stripe = getStripe();
+    
     try {
       const paymentMethods = await stripe.paymentMethods.list({
         customer: customerId,
