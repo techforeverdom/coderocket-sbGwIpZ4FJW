@@ -10,17 +10,11 @@ export class WebhooksController {
    * POST /webhooks/stripe
    * Handle Stripe webhook events
    */
-  static async handleStripeWebhook(req: Request, res: Response): Promise<Response> {
+  static async handleStripeWebhook(req: Request, res: Response) {
     const signature = req.headers['stripe-signature'] as string;
     
     if (!signature) {
       return res.status(400).json({ error: 'Missing stripe-signature header' });
-    }
-
-    // Check if Stripe is configured
-    if (!StripeService.isConfigured()) {
-      console.warn('Stripe webhook received but Stripe is not configured');
-      return res.status(503).json({ error: 'Stripe not configured' });
     }
 
     try {
@@ -41,24 +35,20 @@ export class WebhooksController {
       // Mark webhook as processed
       await WebhookService.markAsProcessed(event.id);
 
-      return res.json({ received: true });
+      res.json({ received: true });
     } catch (error) {
       console.error('Webhook error:', error);
       
       // Log failed webhook
-      try {
-        await WebhookService.logEvent({
-          source: 'stripe',
-          eventType: 'webhook.error',
-          payload: { error: error instanceof Error ? error.message : 'Unknown error' },
-          receivedAt: new Date(),
-          processed: false,
-        });
-      } catch (logError) {
-        console.error('Failed to log webhook error:', logError);
-      }
+      await WebhookService.logEvent({
+        source: 'stripe',
+        eventType: 'webhook.error',
+        payload: { error: error instanceof Error ? error.message : 'Unknown error' },
+        receivedAt: new Date(),
+        processed: false,
+      });
 
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Webhook processing failed',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -68,7 +58,7 @@ export class WebhooksController {
   /**
    * Process different types of Stripe events
    */
-  private static async processStripeEvent(event: Stripe.Event): Promise<void> {
+  private static async processStripeEvent(event: Stripe.Event) {
     console.log(`Processing Stripe event: ${event.type}`);
 
     switch (event.type) {
@@ -106,7 +96,7 @@ export class WebhooksController {
   /**
    * Handle successful payment intent
    */
-  private static async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  private static async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     try {
       const donation = await DonationService.findByStripePaymentIntentId(paymentIntent.id);
       if (!donation) {
@@ -148,7 +138,7 @@ export class WebhooksController {
   /**
    * Handle failed payment intent
    */
-  private static async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  private static async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
     try {
       const donation = await DonationService.findByStripePaymentIntentId(paymentIntent.id);
       if (!donation) {
@@ -169,7 +159,7 @@ export class WebhooksController {
   /**
    * Handle canceled payment intent
    */
-  private static async handlePaymentIntentCanceled(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  private static async handlePaymentIntentCanceled(paymentIntent: Stripe.PaymentIntent) {
     try {
       const donation = await DonationService.findByStripePaymentIntentId(paymentIntent.id);
       if (!donation) {
@@ -190,7 +180,7 @@ export class WebhooksController {
   /**
    * Handle charge disputes
    */
-  private static async handleChargeDispute(dispute: Stripe.Dispute): Promise<void> {
+  private static async handleChargeDispute(dispute: Stripe.Dispute) {
     try {
       console.log(`Charge dispute created: ${dispute.id} for charge: ${dispute.charge}`);
       

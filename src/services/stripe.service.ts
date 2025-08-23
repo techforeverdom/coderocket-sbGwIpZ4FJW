@@ -1,4 +1,4 @@
-import { getStripe, isStripeConfigured, STRIPE_CONFIG } from '../config/stripe';
+import { stripe, STRIPE_CONFIG } from '../config/stripe';
 import { config } from '../config/config';
 import { v4 as uuidv4 } from 'uuid';
 import Stripe from 'stripe';
@@ -22,13 +22,6 @@ export interface FeeCalculation {
 }
 
 export class StripeService {
-  /**
-   * Check if Stripe is configured
-   */
-  static isConfigured(): boolean {
-    return isStripeConfigured();
-  }
-
   /**
    * Calculate fees for a donation amount
    */
@@ -59,11 +52,6 @@ export class StripeService {
    * Create a PaymentIntent for donation checkout
    */
   static async createPaymentIntent(params: CreatePaymentIntentParams): Promise<Stripe.PaymentIntent> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
-    }
-
-    const stripe = getStripe();
     const {
       amountCents,
       campaignId,
@@ -107,23 +95,17 @@ export class StripeService {
     }
 
     try {
-      const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
-        amount: amountCents,
-        currency: STRIPE_CONFIG.currency,
-        payment_method_types: STRIPE_CONFIG.paymentMethodTypes as Stripe.PaymentIntentCreateParams.PaymentMethodType[],
-        capture_method: STRIPE_CONFIG.captureMethod as Stripe.PaymentIntentCreateParams.CaptureMethod,
-        confirmation_method: STRIPE_CONFIG.confirmationMethod as Stripe.PaymentIntentCreateParams.ConfirmationMethod,
-        metadata,
-        description: `Donation to campaign ${campaignId}`,
-      };
-
-      // Add receipt email if provided
-      if (donorEmail) {
-        paymentIntentParams.receipt_email = donorEmail;
-      }
-
       const paymentIntent = await stripe.paymentIntents.create(
-        paymentIntentParams,
+        {
+          amount: amountCents,
+          currency: STRIPE_CONFIG.currency,
+          payment_method_types: STRIPE_CONFIG.paymentMethodTypes,
+          capture_method: STRIPE_CONFIG.captureMethod,
+          confirmation_method: STRIPE_CONFIG.confirmationMethod,
+          metadata,
+          description: `Donation to campaign ${campaignId}`,
+          receipt_email: donorEmail,
+        },
         {
           idempotencyKey,
         }
@@ -140,12 +122,6 @@ export class StripeService {
    * Retrieve a PaymentIntent by ID
    */
   static async getPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
     try {
       return await stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (error) {
@@ -163,12 +139,6 @@ export class StripeService {
     reason?: Stripe.RefundCreateParams.Reason,
     idempotencyKey?: string
   ): Promise<Stripe.Refund> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
     try {
       const refundParams: Stripe.RefundCreateParams = {
         payment_intent: paymentIntentId,
@@ -196,16 +166,6 @@ export class StripeService {
     signature: string,
     secret: string = config.stripe.webhookSecret
   ): Stripe.Event {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    if (!secret) {
-      throw new Error('Webhook secret is not configured');
-    }
-
-    const stripe = getStripe();
-    
     try {
       return stripe.webhooks.constructEvent(payload, signature, secret);
     } catch (error) {
@@ -223,12 +183,6 @@ export class StripeService {
     phone?: string;
     metadata?: Record<string, string>;
   }): Promise<Stripe.Customer> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
     try {
       return await stripe.customers.create({
         email: params.email,
@@ -246,12 +200,6 @@ export class StripeService {
    * List payment methods for a customer
    */
   static async listPaymentMethods(customerId: string): Promise<Stripe.PaymentMethod[]> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
     try {
       const paymentMethods = await stripe.paymentMethods.list({
         customer: customerId,
@@ -261,63 +209,6 @@ export class StripeService {
     } catch (error) {
       console.error('Error listing payment methods:', error);
       throw new Error('Failed to list payment methods');
-    }
-  }
-
-  /**
-   * Update a PaymentIntent
-   */
-  static async updatePaymentIntent(
-    paymentIntentId: string,
-    params: Stripe.PaymentIntentUpdateParams
-  ): Promise<Stripe.PaymentIntent> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
-    try {
-      return await stripe.paymentIntents.update(paymentIntentId, params);
-    } catch (error) {
-      console.error('Error updating PaymentIntent:', error);
-      throw new Error('Failed to update payment intent');
-    }
-  }
-
-  /**
-   * Cancel a PaymentIntent
-   */
-  static async cancelPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
-    try {
-      return await stripe.paymentIntents.cancel(paymentIntentId);
-    } catch (error) {
-      console.error('Error canceling PaymentIntent:', error);
-      throw new Error('Failed to cancel payment intent');
-    }
-  }
-
-  /**
-   * Get balance information
-   */
-  static async getBalance(): Promise<Stripe.Balance> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
-    try {
-      return await stripe.balance.retrieve();
-    } catch (error) {
-      console.error('Error retrieving balance:', error);
-      throw new Error('Failed to retrieve balance');
     }
   }
 }

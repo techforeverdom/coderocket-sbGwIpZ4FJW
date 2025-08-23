@@ -23,16 +23,8 @@ export class DonationsController {
    * POST /donations/checkout
    * Create a PaymentIntent for donation checkout
    */
-  static async createCheckout(req: Request, res: Response): Promise<Response> {
+  static async createCheckout(req: Request, res: Response) {
     try {
-      // Check if Stripe is configured
-      if (!StripeService.isConfigured()) {
-        return res.status(503).json({
-          error: 'Payment processing unavailable',
-          message: 'Stripe is not configured. Please contact support.',
-        });
-      }
-
       const validatedData = createCheckoutSchema.parse(req.body);
       const { amountCents, campaignId, participantId, donorEmail, donorName, message } = validatedData;
 
@@ -86,7 +78,7 @@ export class DonationsController {
         donorName,
       });
 
-      return res.status(201).json({
+      res.status(201).json({
         success: true,
         data: {
           paymentIntent: {
@@ -116,7 +108,7 @@ export class DonationsController {
         });
       }
 
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Failed to create checkout session',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -127,15 +119,8 @@ export class DonationsController {
    * POST /donations/confirm
    * Confirm a PaymentIntent and update donation status
    */
-  static async confirmPayment(req: Request, res: Response): Promise<Response> {
+  static async confirmPayment(req: Request, res: Response) {
     try {
-      if (!StripeService.isConfigured()) {
-        return res.status(503).json({
-          error: 'Payment processing unavailable',
-          message: 'Stripe is not configured.',
-        });
-      }
-
       const { paymentIntentId } = confirmPaymentSchema.parse(req.body);
 
       // Retrieve PaymentIntent from Stripe
@@ -154,7 +139,7 @@ export class DonationsController {
           status = 'succeeded';
           break;
         case 'canceled':
-        case 'requires_payment_method':
+        case 'payment_failed':
           status = 'failed';
           break;
         default:
@@ -163,7 +148,7 @@ export class DonationsController {
 
       const updatedDonation = await DonationService.updateStatus(donation.id, status);
 
-      return res.json({
+      res.json({
         success: true,
         data: {
           donation: updatedDonation,
@@ -184,7 +169,7 @@ export class DonationsController {
         });
       }
 
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Failed to confirm payment',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -195,7 +180,7 @@ export class DonationsController {
    * GET /donations/:id
    * Get donation details
    */
-  static async getDonation(req: Request, res: Response): Promise<Response> {
+  static async getDonation(req: Request, res: Response) {
     try {
       const { id } = req.params;
       
@@ -204,13 +189,13 @@ export class DonationsController {
         return res.status(404).json({ error: 'Donation not found' });
       }
 
-      return res.json({
+      res.json({
         success: true,
         data: donation,
       });
     } catch (error) {
       console.error('Error getting donation:', error);
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Failed to get donation',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -221,15 +206,8 @@ export class DonationsController {
    * POST /donations/:id/refund
    * Create a refund for a donation
    */
-  static async createRefund(req: Request, res: Response): Promise<Response> {
+  static async createRefund(req: Request, res: Response) {
     try {
-      if (!StripeService.isConfigured()) {
-        return res.status(503).json({
-          error: 'Payment processing unavailable',
-          message: 'Stripe is not configured.',
-        });
-      }
-
       const { id } = req.params;
       const { amountCents, reason } = req.body;
 
@@ -256,7 +234,7 @@ export class DonationsController {
       // Update donation status
       const updatedDonation = await DonationService.updateStatus(donation.id, 'refunded');
 
-      return res.json({
+      res.json({
         success: true,
         data: {
           refund: {
@@ -270,78 +248,8 @@ export class DonationsController {
       });
     } catch (error) {
       console.error('Error creating refund:', error);
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Failed to create refund',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  /**
-   * GET /donations/campaign/:campaignId
-   * Get donations for a campaign
-   */
-  static async getCampaignDonations(req: Request, res: Response): Promise<Response> {
-    try {
-      const { campaignId } = req.params;
-      const limit = parseInt(req.query.limit as string) || 50;
-      const offset = parseInt(req.query.offset as string) || 0;
-
-      // Verify campaign exists
-      const campaign = await CampaignService.findById(campaignId);
-      if (!campaign) {
-        return res.status(404).json({ error: 'Campaign not found' });
-      }
-
-      const donations = await DonationService.findByCampaignId(campaignId, limit, offset);
-      const stats = await DonationService.getCampaignStats(campaignId);
-
-      return res.json({
-        success: true,
-        data: {
-          donations,
-          stats,
-          pagination: {
-            limit,
-            offset,
-            total: donations.length,
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error getting campaign donations:', error);
-      return res.status(500).json({
-        error: 'Failed to get campaign donations',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  /**
-   * GET /donations/fees/calculate
-   * Calculate fees for a donation amount
-   */
-  static async calculateFees(req: Request, res: Response): Promise<Response> {
-    try {
-      const amountCents = parseInt(req.query.amount as string);
-
-      if (!amountCents || amountCents < 50) {
-        return res.status(400).json({
-          error: 'Invalid amount',
-          message: 'Amount must be at least 50 cents ($0.50)',
-        });
-      }
-
-      const feeCalculation = StripeService.calculateFees(amountCents);
-
-      return res.json({
-        success: true,
-        data: feeCalculation,
-      });
-    } catch (error) {
-      console.error('Error calculating fees:', error);
-      return res.status(500).json({
-        error: 'Failed to calculate fees',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
