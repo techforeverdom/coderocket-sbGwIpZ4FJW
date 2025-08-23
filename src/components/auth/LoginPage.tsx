@@ -125,6 +125,17 @@ export function LoginPage() {
             </Link>
           </p>
         </div>
+
+        {/* Demo Accounts */}
+        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Demo Accounts:</h3>
+          <div className="text-xs text-blue-800 space-y-1">
+            <div>Admin: admin@believefundraising.com</div>
+            <div>Coach: coach.johnson@lincolnhigh.edu</div>
+            <div>Student: alex.thompson@student.lincolnhigh.edu</div>
+            <div>Password: password123 (for all accounts)</div>
+          </div>
+        </div>
       </Card>
     </div>
   )
