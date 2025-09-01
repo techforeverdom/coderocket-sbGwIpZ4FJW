@@ -1,6 +1,5 @@
 import { StripeService } from '../services/stripe.service';
 import { config } from '../config/config';
-import Stripe from 'stripe';
 
 // Mock Stripe
 jest.mock('stripe');
@@ -8,6 +7,8 @@ const mockStripe = {
   paymentIntents: {
     create: jest.fn(),
     retrieve: jest.fn(),
+    update: jest.fn(),
+    cancel: jest.fn(),
   },
   refunds: {
     create: jest.fn(),
@@ -15,10 +16,21 @@ const mockStripe = {
   webhooks: {
     constructEvent: jest.fn(),
   },
+  customers: {
+    create: jest.fn(),
+  },
+  paymentMethods: {
+    list: jest.fn(),
+  },
+  balance: {
+    retrieve: jest.fn(),
+  },
 };
 
 jest.mock('../config/stripe', () => ({
   stripe: mockStripe,
+  isStripeConfigured: () => true,
+  getStripe: () => mockStripe,
   STRIPE_CONFIG: {
     currency: 'usd',
     paymentMethodTypes: ['card'],
@@ -90,6 +102,7 @@ describe('StripeService', () => {
         expect.objectContaining({
           amount: 10000,
           currency: 'usd',
+          payment_method_types: ['card'],
           metadata: expect.objectContaining({
             campaign_id: 'campaign-123',
             participant_id: 'participant-456',
