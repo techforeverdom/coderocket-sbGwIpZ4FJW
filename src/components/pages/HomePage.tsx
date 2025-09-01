@@ -22,7 +22,7 @@ export function HomePage() {
   const { campaigns } = useCampaigns()
 
   const activeCampaigns = campaigns.filter(c => c.status === 'active')
-  const userCampaigns = campaigns.filter(c => c.created === user?.id)
+  const userCampaigns = campaigns.filter(c => c.createdBy === user?.id)
   const totalRaised = campaigns.reduce((sum, campaign) => sum + campaign.raised, 0)
   const totalGoal = campaigns.reduce((sum, campaign) => sum + campaign.goal, 0)
 
@@ -41,14 +41,6 @@ export function HomePage() {
       case 'supporter': return 'Community Supporter'
       case 'admin': return 'Administrator'
       default: return role
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString()
-    } catch {
-      return 'No end date'
     }
   }
 
@@ -144,7 +136,7 @@ export function HomePage() {
                           </div>
                           <div className="flex items-center">
                             <Calendar className="w-4 h-4 mr-1" />
-                            {campaign.deadline ? formatDate(campaign.deadline) : 'No deadline'}
+                            {new Date(campaign.endDate).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
