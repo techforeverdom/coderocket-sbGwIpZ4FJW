@@ -17,12 +17,6 @@ export class WebhooksController {
       return res.status(400).json({ error: 'Missing stripe-signature header' });
     }
 
-    // Check if Stripe is configured
-    if (!StripeService.isConfigured()) {
-      console.warn('Stripe webhook received but Stripe is not configured');
-      return res.status(503).json({ error: 'Stripe not configured' });
-    }
-
     try {
       // Verify webhook signature
       const event = StripeService.verifyWebhookSignature(req.body, signature);
@@ -46,17 +40,13 @@ export class WebhooksController {
       console.error('Webhook error:', error);
       
       // Log failed webhook
-      try {
-        await WebhookService.logEvent({
-          source: 'stripe',
-          eventType: 'webhook.error',
-          payload: { error: error instanceof Error ? error.message : 'Unknown error' },
-          receivedAt: new Date(),
-          processed: false,
-        });
-      } catch (logError) {
-        console.error('Failed to log webhook error:', logError);
-      }
+      await WebhookService.logEvent({
+        source: 'stripe',
+        eventType: 'webhook.error',
+        payload: { error: error instanceof Error ? error.message : 'Unknown error' },
+        receivedAt: new Date(),
+        processed: false,
+      });
 
       res.status(400).json({
         error: 'Webhook processing failed',
