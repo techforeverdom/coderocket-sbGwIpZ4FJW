@@ -9,10 +9,10 @@ router.post('/checkout', DonationsController.createCheckout);
 router.post('/confirm', DonationsController.confirmPayment);
 router.get('/fees/calculate', DonationsController.calculateFees);
 
-// Optional auth routes
+// Optional auth routes (can work with or without authentication)
 router.get('/:id', optionalAuth, DonationsController.getDonation);
 
-// Protected routes
+// Protected routes (require authentication)
 router.post('/:id/refund', authenticateToken, requireRole(['admin', 'super_admin']), DonationsController.createRefund);
 router.get('/campaign/:campaignId', authenticateToken, DonationsController.getCampaignDonations);
 
