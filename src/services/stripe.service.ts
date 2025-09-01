@@ -107,13 +107,12 @@ export class StripeService {
     }
 
     try {
-      // Create PaymentIntent with proper types
       const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
         amount: amountCents,
         currency: STRIPE_CONFIG.currency,
-        payment_method_types: STRIPE_CONFIG.paymentMethodTypes as any, // Use 'any' to avoid type conflicts
-        capture_method: STRIPE_CONFIG.captureMethod as any,
-        confirmation_method: STRIPE_CONFIG.confirmationMethod as any,
+        payment_method_types: STRIPE_CONFIG.paymentMethodTypes as Stripe.PaymentIntentCreateParams.PaymentMethodType[],
+        capture_method: STRIPE_CONFIG.captureMethod as Stripe.PaymentIntentCreateParams.CaptureMethod,
+        confirmation_method: STRIPE_CONFIG.confirmationMethod as Stripe.PaymentIntentCreateParams.ConfirmationMethod,
         metadata,
         description: `Donation to campaign ${campaignId}`,
       };
@@ -319,55 +318,6 @@ export class StripeService {
     } catch (error) {
       console.error('Error retrieving balance:', error);
       throw new Error('Failed to retrieve balance');
-    }
-  }
-
-  /**
-   * Create a setup intent for saving payment methods
-   */
-  static async createSetupIntent(params: {
-    customerId?: string;
-    paymentMethodTypes?: string[];
-    usage?: 'on_session' | 'off_session';
-  }): Promise<Stripe.SetupIntent> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
-    try {
-      const setupIntentParams: Stripe.SetupIntentCreateParams = {
-        payment_method_types: params.paymentMethodTypes || ['card'],
-        usage: params.usage || 'off_session',
-      };
-
-      if (params.customerId) {
-        setupIntentParams.customer = params.customerId;
-      }
-
-      return await stripe.setupIntents.create(setupIntentParams);
-    } catch (error) {
-      console.error('Error creating SetupIntent:', error);
-      throw new Error('Failed to create setup intent');
-    }
-  }
-
-  /**
-   * Get payment method details
-   */
-  static async getPaymentMethod(paymentMethodId: string): Promise<Stripe.PaymentMethod> {
-    if (!isStripeConfigured()) {
-      throw new Error('Stripe is not configured');
-    }
-
-    const stripe = getStripe();
-    
-    try {
-      return await stripe.paymentMethods.retrieve(paymentMethodId);
-    } catch (error) {
-      console.error('Error retrieving payment method:', error);
-      throw new Error('Failed to retrieve payment method');
     }
   }
 }

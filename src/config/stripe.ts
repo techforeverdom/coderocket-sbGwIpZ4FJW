@@ -16,13 +16,12 @@ if (config.stripe.secretKey) {
 
 export { stripe };
 
-// Use simple configuration without readonly constraints
 export const STRIPE_CONFIG = {
-  currency: 'usd',
-  paymentMethodTypes: ['card'],
-  captureMethod: 'automatic',
-  confirmationMethod: 'automatic',
-};
+  currency: 'usd' as const,
+  paymentMethodTypes: ['card'] as const,
+  captureMethod: 'automatic' as const,
+  confirmationMethod: 'automatic' as const,
+} as const;
 
 // Helper function to check if Stripe is available
 export function isStripeConfigured(): boolean {
@@ -38,45 +37,11 @@ export function getStripe(): Stripe {
 }
 
 // Type definitions for better type safety
+export type PaymentMethodType = 'card' | 'acss_debit' | 'affirm' | 'afterpay_clearpay' | 'alipay' | 'au_becs_debit' | 'bacs_debit' | 'bancontact' | 'blik' | 'boleto' | 'cashapp' | 'customer_balance' | 'eps' | 'fpx' | 'giropay' | 'grabpay' | 'ideal' | 'interac_present' | 'klarna' | 'konbini' | 'link' | 'oxxo' | 'p24' | 'paynow' | 'paypal' | 'pix' | 'promptpay' | 'sepa_debit' | 'sofort' | 'us_bank_account' | 'wechat_pay' | 'zip';
+
 export interface StripeConfig {
   currency: string;
-  paymentMethodTypes: string[];
+  paymentMethodTypes: readonly string[];
   captureMethod: string;
   confirmationMethod: string;
 }
-
-// Supported payment method types (for reference)
-export const SUPPORTED_PAYMENT_METHODS = [
-  'card',
-  'acss_debit',
-  'affirm',
-  'afterpay_clearpay',
-  'alipay',
-  'au_becs_debit',
-  'bacs_debit',
-  'bancontact',
-  'blik',
-  'boleto',
-  'cashapp',
-  'customer_balance',
-  'eps',
-  'fpx',
-  'giropay',
-  'grabpay',
-  'ideal',
-  'interac_present',
-  'klarna',
-  'konbini',
-  'link',
-  'oxxo',
-  'p24',
-  'paynow',
-  'paypal',
-  'pix',
-  'promptpay',
-  'sepa_debit',
-  'sofort',
-  'us_bank_account',
-  'wechat_pay',
-  'zip'
-] as const;
